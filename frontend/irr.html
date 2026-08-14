@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IRR Pilot — TikTok Fashion Coding</title>
+  <link rel="stylesheet" href="/app/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>⚖️</text></svg>">
+</head>
+<body class="app">
+  <header class="topbar">
+    <h1>TikTok Fashion Coding</h1>
+    <nav>
+      <a href="/app/coding.html">Nhập liệu</a>
+      <a href="/app/dashboard.html">Dashboard</a>
+      <a href="/app/irr.html">IRR Pilot</a>
+      <a href="/app/index.html">Dữ liệu</a>
+    </nav>
+    <span class="spacer"></span>
+    <span class="role-pick">
+      <span class="small muted">Vai trò:</span>
+      <button data-role="C1">C1</button>
+      <button data-role="C2">C2</button>
+      <button data-role="compare">So sánh</button>
+    </span>
+  </header>
+
+  <div class="page" id="page">
+    <div class="alert info" id="role-banner" style="margin-bottom:12px"></div>
+
+    <div class="kpis" id="irr-kpis"></div>
+
+    <div class="toolbar">
+      <button id="btn-export-matrix" class="primary small">⬇ Xuất ma trận IRR (wide CSV)</button>
+      <button id="btn-export-long" class="small">⬇ Xuất dạng long CSV</button>
+      <button id="btn-agreement" class="small">% đồng thuận theo biến</button>
+      <span class="spacer" style="flex:1"></span>
+      <button id="btn-select-pilot" class="ghost small">Chọn lại 75 video pilot</button>
+    </div>
+
+    <div id="content"></div>
+  </div>
+
+  <dialog id="agreement-dialog">
+    <div class="dlg-head">% đồng thuận thô giữa C1 và C2</div>
+    <div class="dlg-body" id="agreement-body"></div>
+    <div class="dlg-foot">
+      <button onclick="document.getElementById('agreement-dialog').close()">Đóng</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/app/static/js/irr.js"></script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dữ liệu — TikTok Fashion Coding</title>
+  <link rel="stylesheet" href="/app/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🗂</text></svg>">
+</head>
+<body class="app">
+  <header class="topbar">
+    <h1>TikTok Fashion Coding</h1>
+    <nav>
+      <a href="/app/coding.html">Nhập liệu</a>
+      <a href="/app/dashboard.html">Dashboard</a>
+      <a href="/app/irr.html">IRR Pilot</a>
+      <a href="/app/index.html">Dữ liệu</a>
+    </nav>
+    <span class="spacer"></span>
+    <span class="small muted" id="db-info"></span>
+  </header>
+
+  <div class="page">
+    <div class="chart-grid" style="grid-template-columns: repeat(auto-fit, minmax(420px, 1fr))">
+
+      <section class="chart-card">
+        <h4>1 · Nạp file Excel gốc</h4>
+        <p class="small muted">
+          Nạp <span class="mono">1_Account_List</span>, <span class="mono">2_Video_Queue</span>,
+          <span class="mono">3_Coding_Sheet</span>, <span class="mono">5_IRR_Pilot</span> và
+          <span class="mono">Y_Frame_Quick_Guide</span>. Chạy lại nhiều lần được — khớp theo
+          Video_ID, không tạo dòng trùng, và ô trống trong file không xoá dữ liệu đã nhập trong app.
+        </p>
+        <div class="stack">
+          <div>
+            <label for="file-input">Chọn file .xlsx từ máy</label>
+            <input type="file" id="file-input" accept=".xlsx,.xlsm">
+          </div>
+          <div class="row">
+            <label style="flex:0 0 auto"><input type="checkbox" id="include-coding" checked>
+              Nạp cả dữ liệu coding đã có</label>
+            <button id="btn-upload" class="primary">Nạp file</button>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--line);width:100%">
+          <div>
+            <label for="path-input">Hoặc nạp theo đường dẫn trên máy</label>
+            <input type="text" id="path-input" placeholder="seed/TikTok_Fashion_Research_Sheet_v2.xlsx">
+          </div>
+          <div class="row">
+            <button id="btn-preview">Xem trước</button>
+            <button id="btn-import-path">Nạp từ đường dẫn</button>
+          </div>
+        </div>
+        <pre class="small mono" id="import-report" style="white-space:pre-wrap;margin-top:10px"></pre>
+      </section>
+
+      <section class="chart-card">
+        <h4>2 · Xuất dữ liệu</h4>
+        <p class="small muted">
+          File xuất ra giữ đúng thứ tự và tên 47 cột của <span class="mono">3_Coding_Sheet</span>,
+          paste thẳng lại vào Google Sheets được.
+        </p>
+        <div class="stack">
+          <button id="btn-x-coding" class="primary">⬇ Xuất 3_Coding_Sheet (.xlsx)</button>
+          <button id="btn-x-full">⬇ Xuất full workbook (Coding + IRR)</button>
+          <button id="btn-x-csv">⬇ Xuất CSV</button>
+          <button id="btn-x-irr">⬇ Xuất ma trận IRR (wide CSV cho R/Python)</button>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <h4>3 · Công thức derived (rules_config.json)</h4>
+        <p class="small muted">
+          Field đánh dấu <span class="badge tentative">tạm</span> đang dùng công thức best-guess.
+          Khi có manual v0.1, sửa <span class="mono">backend/rules_config.json</span> rồi bấm
+          "Nạp lại rules" — không cần sửa code, không cần restart.
+        </p>
+        <div id="rules-list"></div>
+        <button id="btn-reload-rules" style="margin-top:8px">↻ Nạp lại rules</button>
+      </section>
+
+      <section class="chart-card">
+        <h4>4 · Đồng bộ Google Sheets <span class="badge">tuỳ chọn</span></h4>
+        <p class="small muted">
+          Không đồng bộ tự động. Mỗi lần đẩy/kéo đều xem diff trước khi ghi.
+          Cần <span class="mono">pip install gspread google-auth</span> và share sheet
+          cho email của service account với quyền Editor.
+        </p>
+        <div class="stack">
+          <div>
+            <label for="cred-path">Đường dẫn file service account (.json)</label>
+            <input type="text" id="cred-path" placeholder="/home/ban/credentials.json">
+          </div>
+          <div>
+            <label for="sheet-id">ID hoặc URL của spreadsheet</label>
+            <input type="text" id="sheet-id" placeholder="https://docs.google.com/spreadsheets/d/...">
+          </div>
+          <div>
+            <label for="sheet-tab">Tên sheet đích</label>
+            <input type="text" id="sheet-tab" value="3_Coding_Sheet">
+          </div>
+          <div class="row">
+            <button id="btn-save-sync" class="primary">Lưu cấu hình</button>
+            <button id="btn-pull">↓ Kéo về từ Sheet</button>
+            <button id="btn-push">↑ Đẩy lên Sheet</button>
+          </div>
+          <div class="small" id="sync-status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <dialog id="diff-dialog">
+    <div class="dlg-head" id="diff-title">Xem diff trước khi ghi</div>
+    <div class="dlg-body" id="diff-body"></div>
+    <div class="dlg-foot">
+      <button onclick="document.getElementById('diff-dialog').close()">Huỷ</button>
+      <button class="primary" id="btn-diff-apply">Xác nhận ghi đè</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/app/static/js/data.js"></script>
+</body>
+</html>

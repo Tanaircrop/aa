@@ -1,0 +1,14 @@
+# Bắt buộc
+fastapi>=0.110
+uvicorn[standard]>=0.27
+sqlmodel>=0.0.16
+openpyxl>=3.1
+python-multipart>=0.0.9
+
+# Tuỳ chọn — chỉ cần nếu dùng đồng bộ Google Sheets (Phase 6)
+# gspread>=6.0
+# google-auth>=2.28
+
+# Chỉ dùng khi chạy test
+# pytest>=8.0
+# httpx2

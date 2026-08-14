@@ -1,0 +1,143 @@
+{
+  "version": "best-guess-v0.1",
+  "note": "Sửa file này khi có manual v0.1 gốc. KHÔNG cần sửa code. Field nào confirmed=false sẽ hiện icon cảnh báo vàng trong UI.",
+  "expression_help": {
+    "variables": "Dùng alias trong columns.py: X1, X2_1..X2_7, X3, X4a, X4b, X4c, X4band, V1, V1_TYPE, V2, V3, V4, Y1..Y9, W1, W2, E1..E5, ER_core, ER_save, ER_follower. Thêm biến phụ: X2_COUNT (số tín hiệu X2.x = 1), N_FRAMES (số Y1..Y6 = 1), MISSING_REQUIRED (số field bắt buộc còn trống), HAS_MISSING_NOTE (0/1).",
+    "functions": "min, max, abs, round, len, sum, int, float, coalesce(a, b), is_blank(x)",
+    "kinds": "formula = một biểu thức; cases = danh sách when/then theo thứ tự, có else; manual = app không tự tính, coder nhập tay; qc = tổng hợp danh sách checks",
+    "require": "Danh sách biến bắt buộc phải có giá trị. Đặt ở cấp rule (thiếu -> field để trống) hoặc trong từng case (thiếu -> bỏ qua case đó). Dùng để field derived không hiện giá trị mặc định gây hiểu nhầm khi coder chưa nhập đủ."
+  },
+
+  "fields": {
+    "x4c_commercial_share": {
+      "kind": "formula",
+      "confirmed": true,
+      "expr": "X4b / X4a * 100",
+      "guard": "X4a > 0",
+      "round": 2,
+      "source": "Xác nhận từ dữ liệu mẫu"
+    },
+
+    "er_view_core": {
+      "kind": "formula",
+      "confirmed": true,
+      "expr": "(E1 + E2 + E3) / E4 * 100",
+      "guard": "E4 > 0",
+      "round": 2,
+      "source": "Xác nhận từ dữ liệu mẫu"
+    },
+
+    "er_view_plus_save": {
+      "kind": "formula",
+      "confirmed": true,
+      "expr": "(E1 + E2 + E3 + E5) / E4 * 100",
+      "guard": "E4 > 0",
+      "round": 2,
+      "source": "Xác nhận từ dữ liệu mẫu; trống nếu E5 chưa nhập"
+    },
+
+    "er_follower": {
+      "kind": "formula",
+      "confirmed": true,
+      "expr": "(E1 + E2 + E3) / V3 * 100",
+      "guard": "V3 > 0",
+      "round": 2,
+      "source": "Xác nhận từ dữ liệu mẫu"
+    },
+
+    "x4_intensity_band": {
+      "kind": "cases",
+      "confirmed": false,
+      "require": ["X1"],
+      "cases": [
+        { "when": "X1 == 0", "then": 0 },
+        { "require": ["X4c"], "when": "X4c <= 33", "then": 1 },
+        { "require": ["X4c"], "when": "X4c <= 66", "then": 2 },
+        { "require": ["X4c"], "when": "X4c > 66", "then": 3 }
+      ],
+      "else": null,
+      "source": "TẠM: ngưỡng 33/66 là best-guess, cần manual v0.1 xác nhận"
+    },
+
+    "x3_visibility_level": {
+      "kind": "cases",
+      "confirmed": false,
+      "require": ["X1"],
+      "cases": [
+        { "when": "X2_COUNT == 0", "then": 0 },
+        { "when": "X2_COUNT <= 2", "then": 1 },
+        { "when": "X2_COUNT <= 4", "then": 2 }
+      ],
+      "else": 3,
+      "source": "TẠM: đếm số tín hiệu X2.1–X2.7 = 1, cần manual v0.1 xác nhận"
+    },
+
+    "v2_commercial_relationship": {
+      "kind": "manual",
+      "confirmed": false,
+      "source": "TODO — cần manual v0.1. App KHÔNG tự tính, coder nhập tay.",
+      "suggestion": {
+        "kind": "cases",
+        "cases": [
+          { "when": "X1 == 0", "then": 0 },
+          { "when": "X2_1 == 1 or X2_4 == 1 or X2_2 == 1 or X2_3 == 1", "then": 3 },
+          { "when": "X2_6 == 1 or X2_7 == 1", "then": 2 }
+        ],
+        "else": 1,
+        "note": "Chỉ hiện làm gợi ý trong panel phải, không tự ghi vào ô. Đổi kind của v2_commercial_relationship thành 'cases' và copy khối này lên để bật auto."
+      }
+    },
+
+    "qc_status": {
+      "kind": "qc",
+      "confirmed": false,
+      "ok_value": "OK",
+      "check_value": "CHECK",
+      "checks": [
+        { "when": "MISSING_REQUIRED > 0", "reason": "Thiếu field bắt buộc" },
+        { "when": "HAS_MISSING_NOTE == 1", "reason": "Có ghi chú thiếu dữ liệu" },
+        { "when": "X4b > X4a", "reason": "X4b > X4a" },
+        { "when": "Y7 >= 1 and Y7 <= 6 and FRAME_OF_Y7 != 1", "reason": "Y7 không khớp Y1–Y6 tương ứng" },
+        { "when": "Y7 == 7 and N_FRAMES < 2", "reason": "Y7=7 (Mixed) nhưng có dưới 2 frame" },
+        { "when": "X1 == 0 and X2_COUNT > 0", "reason": "X1=0 nhưng vẫn có tín hiệu X2.x" },
+        { "when": "X1 == 0 and X4b > 0", "reason": "X1=0 nhưng X4b > 0" },
+        { "when": "X1 == 1 and X2_COUNT == 0", "reason": "X1=1 nhưng không có tín hiệu disclosure nào" }
+      ],
+      "source": "TẠM: tiêu chí đầy đủ cần manual v0.1"
+    }
+  },
+
+  "validation": {
+    "hard_warnings": [
+      { "when": "X4b > X4a", "message": "X4b (giây thương mại) đang lớn hơn X4a (tổng giây video)", "fields": ["x4a_video_sec", "x4b_commercial_sec"] },
+      { "when": "Y7 >= 1 and Y7 <= 6 and FRAME_OF_Y7 != 1", "message": "Y7 chọn frame nhưng Y tương ứng chưa = 1", "fields": ["y7_dominant_frame"] },
+      { "when": "Y7 == 7 and N_FRAMES < 2", "message": "Y7 = 7 (Mixed) cần ít nhất 2 frame Y1–Y6 = 1", "fields": ["y7_dominant_frame"] }
+    ],
+    "soft_warnings": [
+      { "when": "X1 == 0 and X2_COUNT > 0", "message": "X1 = 0 nhưng vẫn có tín hiệu X2.x = 1", "fields": ["x1_commercial"] },
+      { "when": "X1 == 0 and X4b > 0", "message": "X1 = 0 nhưng X4b > 0", "fields": ["x4b_commercial_sec"] },
+      { "when": "X1 == 1 and X2_COUNT == 0", "message": "X1 = 1 nhưng không có tín hiệu disclosure nào (X2.1–X2.7 đều 0)", "fields": ["x1_commercial"] },
+      { "when": "X1 == 1 and X4b == 0", "message": "X1 = 1 nhưng X4b = 0 giây", "fields": ["x4b_commercial_sec"] },
+      { "when": "W1 == 0 and W2 > 0", "message": "W1 = 0 nhưng W2 vẫn chọn nguồn nhãn AI", "fields": ["w2_ai_label_source"] },
+      { "when": "E4 > 0 and ER_core > 100", "message": "ER_view_core > 100% — kiểm tra lại số liệu engagement", "fields": ["e4_views"] }
+    ]
+  },
+
+  "irr": {
+    "scale_types": {
+      "x4a_video_sec": "interval",
+      "x4b_commercial_sec": "interval",
+      "y8_cta": "ordinal",
+      "_default": "nominal"
+    },
+    "compare_fields": [
+      "account_type", "dominant_format",
+      "x1_commercial", "x2_1_platform_label", "x2_2_verbal", "x2_3_onscreen",
+      "x2_4_hashtag", "x2_5_brand_tag", "x2_6_product_link", "x2_7_promo_code",
+      "x4a_video_sec", "x4b_commercial_sec",
+      "y1_information", "y2_experience", "y3_aesthetic", "y4_price_promo",
+      "y5_social_proof", "y6_problem_solution", "y7_dominant_frame", "y8_cta",
+      "y9_appeal", "w1_ai_disclosure", "w2_ai_label_source"
+    ]
+  }
+}

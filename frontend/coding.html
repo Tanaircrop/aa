@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nhập liệu — TikTok Fashion Coding</title>
+  <link rel="stylesheet" href="/app/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📝</text></svg>">
+</head>
+<body class="app">
+  <header class="topbar">
+    <h1>TikTok Fashion Coding</h1>
+    <nav>
+      <a href="/app/coding.html">Nhập liệu</a>
+      <a href="/app/dashboard.html">Dashboard</a>
+      <a href="/app/irr.html">IRR Pilot</a>
+      <a href="/app/index.html">Dữ liệu</a>
+    </nav>
+    <span class="spacer"></span>
+    <span class="coder-pick">
+      <label for="coder-select">Coder</label>
+      <select id="coder-select" style="width:auto"></select>
+    </span>
+    <button id="btn-help" class="ghost small" title="Phím tắt">⌨ Phím tắt</button>
+  </header>
+
+  <div class="workspace">
+    <!-- Sidebar: danh sách video -->
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <input type="text" id="search" placeholder="Tìm STT / handle / Video_ID  (Ctrl+F)" autocomplete="off">
+        <div class="row" style="margin-top:6px">
+          <select id="filter-status" style="width:auto;flex:1">
+            <option value="all">Tất cả</option>
+            <option value="not_started">Chưa code</option>
+            <option value="in_progress">Đang code dở</option>
+            <option value="ok">QC OK</option>
+            <option value="check">QC CHECK</option>
+            <option value="flagged">Đã đánh dấu</option>
+          </select>
+          <select id="filter-coder" style="width:auto;flex:1">
+            <option value="">Mọi coder</option>
+          </select>
+        </div>
+        <div class="small muted" id="sidebar-counts" style="margin-top:6px"></div>
+      </div>
+      <div class="sidebar-list" id="video-list"></div>
+    </aside>
+
+    <!-- Panel chính: form -->
+    <main class="main">
+      <div class="metastrip" id="metastrip"></div>
+      <div id="form-root"></div>
+    </main>
+
+    <!-- Panel phải: derived realtime -->
+    <aside class="aside" id="derived-panel"></aside>
+  </div>
+
+  <footer class="bottombar">
+    <button id="btn-prev">◀ Video trước</button>
+    <button id="btn-next-save" class="primary">Lưu &amp; Video tiếp ▶</button>
+    <button id="btn-flag">⚑ Đánh dấu review</button>
+    <button id="btn-open-video" class="ghost">↗ Mở video</button>
+    <span class="spacer"></span>
+    <span class="hint" id="save-state">—</span>
+    <span class="hint">
+      <kbd>0/1/9</kbd> chọn &amp; nhảy · <kbd>Tab</kbd> di chuyển ·
+      <kbd>Alt</kbd>+<kbd>↵</kbd> lưu &amp; tiếp · <kbd>Alt</kbd>+<kbd>←→</kbd> đổi video
+    </span>
+  </footer>
+
+  <dialog id="help-dialog">
+    <div class="dlg-head">Phím tắt</div>
+    <div class="dlg-body">
+      <table class="compare">
+        <tbody>
+          <tr><td><kbd>0</kbd> <kbd>1</kbd> <kbd>2</kbd> <kbd>9</kbd></td><td>Đặt giá trị cho field đang focus rồi tự nhảy sang field kế tiếp</td></tr>
+          <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Di chuyển tới/lui, không đổi giá trị</td></tr>
+          <tr><td><kbd>Alt</kbd>+<kbd>Enter</kbd></td><td>Lưu video hiện tại và sang video tiếp theo (theo filter đang bật)</td></tr>
+          <tr><td><kbd>Alt</kbd>+<kbd>←</kbd> / <kbd>Alt</kbd>+<kbd>→</kbd></td><td>Video trước / sau (autosave, không cần lưu tay)</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Nhảy vào ô tìm kiếm ở sidebar</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Mở video trên TikTok</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Bỏ focus khỏi field đang gõ</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted" style="margin-bottom:0">
+        Mọi thay đổi được autosave ngay vào SQLite local. Nút "Lưu &amp; Video tiếp"
+        chỉ chạy validate rồi điều hướng — không sợ mất dữ liệu giữa chừng.
+      </p>
+    </div>
+    <div class="dlg-foot"><button onclick="document.getElementById('help-dialog').close()">Đóng</button></div>
+  </dialog>
+
+  <script type="module" src="/app/static/js/coding.js"></script>
+</body>
+</html>

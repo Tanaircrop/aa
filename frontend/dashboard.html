@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — TikTok Fashion Coding</title>
+  <link rel="stylesheet" href="/app/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📊</text></svg>">
+</head>
+<body class="app">
+  <header class="topbar">
+    <h1>TikTok Fashion Coding</h1>
+    <nav>
+      <a href="/app/coding.html">Nhập liệu</a>
+      <a href="/app/dashboard.html">Dashboard</a>
+      <a href="/app/irr.html">IRR Pilot</a>
+      <a href="/app/index.html">Dữ liệu</a>
+    </nav>
+    <span class="spacer"></span>
+    <button id="btn-refresh" class="small">↻ Làm mới</button>
+    <button id="btn-export-xlsx" class="small primary">⬇ Xuất Excel</button>
+    <button id="btn-export-csv" class="small">⬇ Xuất CSV</button>
+  </header>
+
+  <div class="page">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="chart-grid">
+      <div class="chart-card" style="grid-column: 1 / -1">
+        <h4>Số video code được theo ngày (V0.6 Coding_date)</h4>
+        <div id="chart-timeline"></div>
+      </div>
+      <div class="chart-card">
+        <h4>X1 Commercial_content</h4>
+        <div id="chart-x1"></div>
+      </div>
+      <div class="chart-card">
+        <h4>QC status</h4>
+        <div id="chart-qc"></div>
+      </div>
+      <div class="chart-card">
+        <h4>Y7 Dominant_frame</h4>
+        <div id="chart-y7"></div>
+      </div>
+      <div class="chart-card">
+        <h4>Y9 Observed_appeal</h4>
+        <div id="chart-y9"></div>
+      </div>
+      <div class="chart-card">
+        <h4>X4 Intensity_band <span class="badge tentative">công thức tạm</span></h4>
+        <div id="chart-x4band"></div>
+      </div>
+      <div class="chart-card">
+        <h4>X3 Visibility_level <span class="badge tentative">công thức tạm</span></h4>
+        <div id="chart-x3"></div>
+      </div>
+      <div class="chart-card">
+        <h4>Y8 CTA</h4>
+        <div id="chart-y8"></div>
+      </div>
+      <div class="chart-card">
+        <h4>ER_view_core (%) theo Account_type</h4>
+        <div id="chart-er-type"></div>
+      </div>
+      <div class="chart-card">
+        <h4>ER_view_core (%) theo Tier</h4>
+        <div id="chart-er-tier"></div>
+      </div>
+      <div class="chart-card">
+        <h4>Tiến độ theo Coder_ID</h4>
+        <div id="chart-coder"></div>
+      </div>
+    </div>
+
+    <h2>Videos cần review</h2>
+    <div class="table-wrap" style="max-height:36vh; margin-bottom:18px">
+      <table class="grid" id="review-table">
+        <thead>
+          <tr><th>STT</th><th>Handle</th><th>Coder</th><th>QC</th><th>Lý do</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h2>Bảng dữ liệu thô</h2>
+    <div class="toolbar">
+      <input type="text" id="grid-search" placeholder="Lọc theo STT / handle / Video_ID" style="max-width:280px">
+      <select id="grid-status" style="width:auto">
+        <option value="all">Mọi trạng thái</option>
+        <option value="not_started">Chưa code</option>
+        <option value="in_progress">Đang code dở</option>
+        <option value="ok">QC OK</option>
+        <option value="check">QC CHECK</option>
+      </select>
+      <span class="small muted">Click vào ô có thể sửa để chỉnh nhanh (autosave, derived tự tính lại).</span>
+      <span class="spacer" style="flex:1"></span>
+      <span class="small muted" id="grid-count"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid" id="data-grid">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module" src="/app/static/js/dashboard.js"></script>
+</body>
+</html>

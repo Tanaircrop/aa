@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Dữ liệu local — không commit dữ liệu nghiên cứu
+data.db
+data.db-wal
+data.db-shm
+seed/*.xlsx
+!seed/README.md
+*.json.credentials
+credentials.json
+service_account*.json
+
+.pytest_cache/
+.DS_Store
