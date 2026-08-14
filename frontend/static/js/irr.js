@@ -1,11 +1,12 @@
 /* IRR Pilot: code độc lập theo vai trò C1/C2, màn hình so sánh, xuất ma trận. */
 
-import { api, toast, escapeHtml, fmtInt, markActiveNav, downloadUrl, debounce } from './common.js';
+import { api, toast, escapeHtml, fmtInt, markActiveNav, downloadUrl, debounce, session, initSession } from './common.js';
 
 const state = {
   schema: null,
   byKey: {},
-  role: localStorage.getItem('tiktok_irr_role') || 'C1',
+  role: '',        // vai trò thật (C1/C2), lấy từ tài khoản đăng nhập
+  mode: 'code',    // 'code' | 'compare'
   videos: [],
   counts: {},
   currentId: null,
@@ -17,6 +18,7 @@ init().catch((err) => toast('Lỗi tải IRR: ' + err.message, 'error'));
 
 async function init() {
   markActiveNav();
+  await initSession();
   state.schema = await api.get('/api/meta/schema');
   state.schema.columns.forEach((c) => { state.byKey[c.key] = c; });
 
@@ -30,32 +32,37 @@ async function init() {
   document.getElementById('btn-agreement').addEventListener('click', showAgreement);
   document.getElementById('btn-select-pilot').addEventListener('click', selectPilot);
 
-  await setRole(state.role);
+  // Vai trò code = tài khoản đăng nhập, không chọn được nữa.
+  document.getElementById('btn-role-code').textContent = `Code ${session.coder_id}`;
+  await setRole('code');
 }
 
-async function setRole(role) {
-  state.role = role;
-  localStorage.setItem('tiktok_irr_role', role);
+async function setRole(mode) {
+  // `mode` chỉ còn hai giá trị: 'code' (code bằng chính vai trò của mình) và
+  // 'compare'. `state.role` giữ vai trò thật để ghép vào URL API.
+  state.mode = mode;
+  state.role = mode === 'compare' ? 'compare' : session.coder_id;
   document.querySelectorAll('[data-role]').forEach((b) => {
-    b.classList.toggle('on', b.dataset.role === role);
+    b.classList.toggle('on', b.dataset.role === mode);
   });
 
   const banner = document.getElementById('role-banner');
-  if (role === 'compare') {
+  if (mode === 'compare') {
     banner.className = 'alert info';
     banner.innerHTML = '<b>Chế độ so sánh.</b> Chỉ mở được video mà <b>cả C1 và C2</b> '
       + 'đã code xong — trước đó hai vai trò không thấy giá trị của nhau.';
   } else {
     banner.className = 'alert soft';
-    banner.innerHTML = `<b>Đang code với vai trò ${role}.</b> Màn hình này không hiển thị `
-      + `giá trị của vai trò kia, để hai lượt code hoàn toàn độc lập (tránh bias).`;
+    banner.innerHTML = `<b>Đang code với vai trò ${state.role}.</b> Vai trò khoá theo `
+      + `tài khoản đăng nhập, và màn hình này không hiển thị giá trị của vai trò kia — `
+      + `hai lượt code hoàn toàn độc lập (tránh bias).`;
   }
 
   await loadList();
 }
 
 async function loadList() {
-  const params = state.role === 'compare' ? {} : { role: state.role };
+  const params = state.mode === 'compare' ? {} : { role: state.role };
   const data = await api.get('/api/irr/videos', params);
   state.videos = data.videos;
   state.counts = data.counts;
@@ -86,8 +93,8 @@ function renderList() {
   }
 
   const rows = state.videos.map((v) => {
-    const openable = state.role !== 'compare' || v.both_done;
-    const label = state.role === 'compare'
+    const openable = state.mode !== 'compare' || v.both_done;
+    const label = state.mode === 'compare'
       ? (v.both_done ? '<span class="badge ok">so sánh được</span>'
         : `<span class="badge">chờ ${['C1', 'C2'].filter((r) => !(v.done_by || []).includes(r)).join(', ')}</span>`)
       : `<span class="dot ${v.status}"></span> ${statusText(v.status)}`;
@@ -97,7 +104,7 @@ function renderList() {
         <td class="mono small">${escapeHtml(v.video_id)}</td>
         <td>${label}</td>
         <td>${openable ? `<button class="small" data-open="${escapeHtml(v.video_id)}">
-              ${state.role === 'compare' ? 'So sánh' : 'Code ' + state.role}</button>` : ''}</td>
+              ${state.mode === 'compare' ? 'So sánh' : 'Code ' + state.role}</button>` : ''}</td>
       </tr>`;
   }).join('');
 
@@ -121,7 +128,7 @@ function statusText(status) {
 
 async function open(videoId) {
   state.currentId = videoId;
-  if (state.role === 'compare') return openCompare(videoId);
+  if (state.mode === 'compare') return openCompare(videoId);
   return openForm(videoId);
 }
 

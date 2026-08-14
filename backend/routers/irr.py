@@ -18,8 +18,9 @@ from sqlmodel import Session, select
 
 from ..columns import COLUMNS_BY_KEY
 from ..database import get_session
-from ..models import IRREntry, Video
+from ..models import Coder, IRREntry, Video
 from ..services import derive
+from ..services.auth import current_coder
 from ..services.entries import (apply_patch, ensure_irr_entry, payload,
                                 recompute, serialize, status_of)
 
@@ -49,6 +50,31 @@ def _check_role(role: str) -> str:
     return role
 
 
+def _own_role(role: str, me: Coder) -> str:
+    """Chỉ cho code đúng vai trò của tài khoản đang đăng nhập.
+
+    Đây là chốt chống bias thật sự: trước đây vai trò là một dropdown trên
+    giao diện, ai cũng đổi được nên C1 có thể vô tình (hoặc cố ý) mở bản code
+    của C2. Buộc `role` khớp tài khoản thì hai lượt code mới thực sự độc lập.
+
+    Tài khoản `is_admin` được miễn để còn sửa/gỡ rối dữ liệu khi cần.
+    """
+    role = _check_role(role)
+    if me.is_admin:
+        return role
+    if me.coder_id not in ROLES:
+        raise HTTPException(
+            403, f"Tài khoản {me.coder_id} không tham gia IRR pilot")
+    if role != me.coder_id:
+        raise HTTPException(
+            403,
+            f"Bạn đang đăng nhập bằng {me.coder_id} nên chỉ code được vai trò "
+            f"{me.coder_id}. Muốn code vai trò {role} thì đăng nhập bằng tài "
+            f"khoản {role}.",
+        )
+    return role
+
+
 def _pilot_videos(session: Session) -> list[Video]:
     return session.exec(
         select(Video).where(Video.in_irr_pilot).order_by(Video.stt, Video.id)
@@ -57,8 +83,11 @@ def _pilot_videos(session: Session) -> list[Video]:
 
 @router.get("/videos")
 def list_pilot(role: Optional[str] = None, status: str = "all",
+               me: Coder = Depends(current_coder),
                session: Session = Depends(get_session)) -> dict[str, Any]:
     """Danh sách 75 video pilot. Chỉ lộ trạng thái của `role` đang chọn."""
+    if role:
+        _own_role(role, me)
     videos = _pilot_videos(session)
     entries: dict[tuple[str, str], IRREntry] = {
         (e.video_id, e.role): e for e in session.exec(select(IRREntry)).all()
@@ -293,8 +322,9 @@ def select_pilot(n: int = Query(75, ge=1), every: Optional[int] = None,
 # nếu không "compare", "export", "pilot" sẽ bị nuốt thành giá trị của {role}.
 @router.get("/{role}/{video_id}")
 def get_irr_entry(role: str, video_id: str,
+                  me: Coder = Depends(current_coder),
                   session: Session = Depends(get_session)) -> dict[str, Any]:
-    role = _check_role(role)
+    role = _own_role(role, me)
     video = session.exec(select(Video).where(Video.video_id == video_id)).first()
     if video is None:
         raise HTTPException(404, f"Không tìm thấy video {video_id}")
@@ -312,8 +342,9 @@ class PatchIn(BaseModel):
 
 @router.patch("/{role}/{video_id}")
 def patch_irr_entry(role: str, video_id: str, body: PatchIn,
+                    me: Coder = Depends(current_coder),
                     session: Session = Depends(get_session)) -> dict[str, Any]:
-    role = _check_role(role)
+    role = _own_role(role, me)
     video = session.exec(select(Video).where(Video.video_id == video_id)).first()
     if video is None:
         raise HTTPException(404, f"Không tìm thấy video {video_id}")

@@ -1,6 +1,6 @@
 /* Dashboard: KPI, biểu đồ, bảng cần review, data grid sửa nhanh inline. */
 
-import { api, toast, escapeHtml, fmtInt, fmtNumber, debounce, markActiveNav, downloadUrl } from './common.js';
+import { api, toast, escapeHtml, fmtInt, fmtNumber, debounce, markActiveNav, downloadUrl, initSession } from './common.js';
 import { barChart, groupedBarChart, lineChart, donutChart, PALETTE } from './charts.js';
 
 const state = { schema: null, columns: [], byKey: {}, gridRows: [], summary: null };
@@ -9,6 +9,7 @@ init().catch((err) => toast('Lỗi tải dashboard: ' + err.message, 'error'));
 
 async function init() {
   markActiveNav();
+  await initSession();
   state.schema = await api.get('/api/meta/schema');
   state.columns = state.schema.columns;
   state.columns.forEach((c) => { state.byKey[c.key] = c; });

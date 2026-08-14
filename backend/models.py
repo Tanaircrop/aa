@@ -13,12 +13,17 @@ from sqlmodel import JSON, Column as SAColumn, Field, SQLModel
 
 
 class Coder(SQLModel, table=True):
+    """Tài khoản coder. `password_hash` rỗng = chưa đặt mật khẩu, không đăng
+    nhập được (đặt bằng `python seed/bootstrap_remote.py --set-password`)."""
+
     __tablename__ = "coders"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     coder_id: str = Field(index=True, unique=True)  # C1, C2...
     name: str = ""
     active: bool = True
+    password_hash: str = ""
+    is_admin: bool = False
 
 
 class Account(SQLModel, table=True):

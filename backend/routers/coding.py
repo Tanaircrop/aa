@@ -9,8 +9,9 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from ..database import get_session
-from ..models import CodingEntry, Video
+from ..models import Coder, CodingEntry, Video
 from ..services import derive, validate as validate_service
+from ..services.auth import current_coder
 from ..services.entries import (apply_patch, ensure_entry, entry_dict, payload,
                                 recompute)
 
@@ -26,9 +27,12 @@ def _get_video(session: Session, video_id: str) -> Video:
 
 @router.get("/{video_id}")
 def get_entry(video_id: str, coder: Optional[str] = None,
+              me: Coder = Depends(current_coder),
               session: Session = Depends(get_session)) -> dict[str, Any]:
     video = _get_video(session, video_id)
-    entry = ensure_entry(session, video, default_coder=coder)
+    # Coder mặc định lấy từ tài khoản đăng nhập; tham số `coder` chỉ còn là
+    # dự phòng cho chế độ chạy không auth (dev/test).
+    entry = ensure_entry(session, video, default_coder=me.coder_id or coder)
     return payload(entry, video)
 
 

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng nhập — TikTok Fashion Coding</title>
+  <link rel="stylesheet" href="/app/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📝</text></svg>">
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <h1>TikTok Fashion Coding</h1>
+    <p class="muted small">Đăng nhập bằng tài khoản coder của bạn.</p>
+
+    <form id="login-form" autocomplete="on">
+      <label for="coder">Coder</label>
+      <input type="text" id="coder" name="username" placeholder="C1"
+             autocapitalize="characters" autocomplete="username" required autofocus>
+
+      <label for="password">Mật khẩu</label>
+      <input type="password" id="password" name="password"
+             autocomplete="current-password" required>
+
+      <div class="login-error" id="error" hidden></div>
+
+      <button type="submit" class="primary" id="submit">Đăng nhập</button>
+    </form>
+
+    <p class="muted small login-foot">
+      Quên mật khẩu thì người quản trị đặt lại bằng
+      <code>python seed/bootstrap_remote.py --set-password</code>.
+    </p>
+  </main>
+
+  <script type="module" src="/app/static/js/login.js"></script>
+</body>
+</html>

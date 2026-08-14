@@ -38,6 +38,12 @@ function clean(params) {
 
 async function handle(res) {
   if (!res.ok) {
+    // Phiên hết hạn giữa chừng: đưa thẳng về login kèm đường quay lại, thay vì
+    // để người dùng nhìn một loạt toast lỗi khó hiểu.
+    if (res.status === 401 && !location.pathname.endsWith('/login.html')) {
+      const next = encodeURIComponent(location.pathname + location.search);
+      location.replace(`/app/login.html?next=${next}`);
+    }
     let detail = res.statusText;
     try {
       const body = await res.json();
@@ -150,10 +156,61 @@ export function markActiveNav() {
   });
 }
 
-/** Coder đang chọn được nhớ trong localStorage để không phải chọn lại mỗi lần mở app. */
+/* ---------------- Phiên đăng nhập ---------------- */
+
+/** Coder đang đăng nhập. Điền bởi `initSession()` trước khi trang dựng UI. */
+export const session = {
+  coder_id: '',
+  name: '',
+  is_admin: false,
+  auth_enabled: true,
+};
+
+/**
+ * Nạp danh tính từ `/api/auth/me`, vẽ badge + nút Đăng xuất lên thanh trên cùng.
+ * Gọi ở đầu mỗi trang, trước khi render phần còn lại.
+ */
+export async function initSession() {
+  let me;
+  try {
+    me = await api.get('/api/auth/me');
+  } catch {
+    me = { authenticated: false, auth_enabled: true };
+  }
+  if (!me.authenticated && me.auth_enabled) {
+    const next = encodeURIComponent(location.pathname + location.search);
+    location.replace(`/app/login.html?next=${next}`);
+    // Trả về Promise không bao giờ resolve: chặn code phía sau chạy tiếp trong
+    // lúc trình duyệt đang chuyển trang.
+    return new Promise(() => {});
+  }
+  Object.assign(session, {
+    coder_id: me.coder_id || '',
+    name: me.name || '',
+    is_admin: !!me.is_admin,
+    auth_enabled: !!me.auth_enabled,
+  });
+  renderWhoami();
+  return session;
+}
+
+function renderWhoami() {
+  const slot = document.getElementById('whoami');
+  if (!slot) return;
+  slot.innerHTML = `
+    <span class="badge-coder" title="${escapeHtml(session.name || '')}">
+      ${escapeHtml(session.coder_id)}</span>
+    <button class="ghost small" id="btn-logout">Đăng xuất</button>`;
+  slot.querySelector('#btn-logout').addEventListener('click', async () => {
+    await api.post('/api/auth/logout');
+    location.replace('/app/login.html');
+  });
+}
+
+/** Coder đang thao tác = coder đã đăng nhập (không cho chọn tự do nữa). */
 export const coderStore = {
-  get() { return localStorage.getItem('tiktok_coding_coder') || ''; },
-  set(value) { localStorage.setItem('tiktok_coding_coder', value || ''); },
+  get() { return session.coder_id; },
+  set() { /* khoá theo tài khoản đăng nhập — giữ hàm để không vỡ chỗ gọi cũ */ },
 };
 
 export function downloadUrl(url) {

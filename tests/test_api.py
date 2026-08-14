@@ -2,31 +2,31 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# `sys.path` và biến môi trường do `conftest.py` lo, chạy trước file này.
+
+#: Mật khẩu dùng trong test. Auth bật thật (không dùng DISABLE_AUTH) để đường
+#: đăng nhập và khoá vai trò IRR đều được kiểm tra như lúc chạy production.
+PASSWORDS = {"C1": "matkhau-c1-test", "C2": "matkhau-c2-test"}
 
 
 @pytest.fixture(scope="module")
 def client(tmp_path_factory):
-    """App chạy trên DB tạm, seed bằng workbook demo sinh tại chỗ."""
-    db_path = tmp_path_factory.mktemp("db") / "test.db"
-    import os
+    """App chạy trên DB tạm (khai báo ở `conftest.py`), seed bằng workbook demo.
 
-    os.environ["TIKTOK_CODING_DB"] = str(db_path)
-    for module in [m for m in list(sys.modules) if m.startswith("backend")]:
-        del sys.modules[module]
-
+    Không đụng vào `sys.modules`: env đã được conftest đặt trước khi import, nên
+    engine trỏ đúng DB tạm ngay từ đầu và test chạy được ở bất kỳ thứ tự nào.
+    """
     from fastapi.testclient import TestClient
 
     from backend.app import app
     from backend.database import engine, init_db
-    from backend.services.importer import import_workbook
+    from backend.models import Coder
+    from backend.services.auth import hash_password
+    from backend.services.importer import import_workbook, seed_coders
     from seed.make_demo_xlsx import build
-    from sqlmodel import Session
+    from sqlmodel import Session, select
 
     xlsx = tmp_path_factory.mktemp("seed") / "demo.xlsx"
     build(24, 8).save(xlsx)
@@ -34,10 +34,25 @@ def client(tmp_path_factory):
     init_db()
     with Session(engine) as session:
         import_workbook(session, xlsx)
+        seed_coders(session)
+        for coder_id, password in PASSWORDS.items():
+            coder = session.exec(
+                select(Coder).where(Coder.coder_id == coder_id)).first()
+            coder.password_hash = hash_password(password)
+            session.add(coder)
+        session.commit()
 
     with TestClient(app) as test_client:
         test_client.xlsx_path = xlsx
+        login(test_client, "C1")
         yield test_client
+
+
+def login(client, role: str) -> None:
+    """Đổi tài khoản đang đăng nhập của client (cookie giữ trong session)."""
+    res = client.post("/api/auth/login",
+                      json={"coder_id": role, "password": PASSWORDS[role]})
+    assert res.status_code == 200, res.text
 
 
 def first_uncoded(client) -> str:
@@ -52,6 +67,88 @@ COMPLETE = {
     "y4_price_promo": 0, "y5_social_proof": 0, "y6_problem_solution": 0,
     "y7_dominant_frame": 1, "y8_cta": 1, "y9_appeal": 4, "w1_ai_disclosure": 0,
 }
+
+
+# -------------------------------------------------------------------- Auth
+
+def test_api_requires_login(client):
+    """Không có cookie hợp lệ thì mọi router dữ liệu đều 401."""
+    from fastapi.testclient import TestClient
+
+    from backend.app import app
+
+    with TestClient(app) as anon:          # client mới = chưa có cookie
+        assert anon.get("/api/meta/schema").status_code == 401
+        assert anon.get("/api/videos").status_code == 401
+        assert anon.get("/api/dashboard/summary").status_code == 401
+        assert anon.get("/api/io/export/coding.xlsx").status_code == 401
+        # Health để công khai cho uptime check.
+        assert anon.get("/api/health").status_code == 200
+
+
+def test_page_redirects_to_login_when_anonymous(client):
+    from fastapi.testclient import TestClient
+
+    from backend.app import app
+
+    with TestClient(app) as anon:
+        res = anon.get("/app/coding.html", follow_redirects=False)
+        assert res.status_code == 302
+        assert res.headers["location"].startswith("/app/login.html")
+        # Trang login phải mở được, nếu không sẽ thành vòng lặp chuyển hướng.
+        assert anon.get("/app/login.html", follow_redirects=False).status_code == 200
+
+
+def test_login_rejects_wrong_password(client):
+    from fastapi.testclient import TestClient
+
+    from backend.app import app
+
+    with TestClient(app) as anon:
+        bad = anon.post("/api/auth/login",
+                        json={"coder_id": "C1", "password": "sai-be-bet"})
+        assert bad.status_code == 401
+        # Không tiết lộ tài khoản nào có thật.
+        assert anon.post("/api/auth/login",
+                         json={"coder_id": "KHONGCO", "password": "x"}
+                         ).json()["detail"] == bad.json()["detail"]
+
+
+def test_me_reports_logged_in_coder(client):
+    me = client.get("/api/auth/me").json()
+    assert me["authenticated"] is True
+    assert me["coder_id"] == "C1"
+
+
+def test_logout_clears_session(client):
+    try:
+        client.post("/api/auth/logout")
+        assert client.get("/api/auth/me").json()["authenticated"] is False
+        assert client.get("/api/videos").status_code == 401
+    finally:
+        login(client, "C1")
+
+
+def test_password_hash_is_salted_and_verifiable():
+    from backend.services.auth import hash_password, verify_password
+
+    a, b = hash_password("cung-mot-mat-khau"), hash_password("cung-mot-mat-khau")
+    assert a != b                       # salt khác nhau mỗi lần
+    assert verify_password("cung-mot-mat-khau", a)
+    assert not verify_password("khac", a)
+    assert not verify_password("bat-ky", "")   # chưa đặt mật khẩu
+
+
+def test_session_token_rejects_tampering():
+    from backend.services.auth import make_token, read_token
+
+    token = make_token("C1")
+    assert read_token(token) == "C1"
+    # Đổi coder_id trong payload mà giữ chữ ký cũ -> vô hiệu.
+    _, expires, signature = token.rsplit("|", 2)
+    assert read_token(f"C2|{expires}|{signature}") is None
+    assert read_token("rac") is None
+    assert read_token(make_token("C1", max_age=-1)) is None   # hết hạn
 
 
 # ------------------------------------------------------------------ Schema
@@ -204,10 +301,28 @@ def test_irr_roles_are_independent(client):
     assert c1["completed"] is True
 
     # C2 mở cùng video: không thấy giá trị nào của C1.
-    c2 = client.get(f"/api/irr/C2/{video_id}").json()
-    assert c2["values"]["y9_appeal"] is None
-    assert c2["values"]["x1_commercial"] is None
-    assert c2["values"]["url"]  # metadata thì vẫn auto-pull
+    login(client, "C2")
+    try:
+        c2 = client.get(f"/api/irr/C2/{video_id}").json()
+        assert c2["values"]["y9_appeal"] is None
+        assert c2["values"]["x1_commercial"] is None
+        assert c2["values"]["url"]  # metadata thì vẫn auto-pull
+    finally:
+        login(client, "C1")
+
+
+def test_irr_role_locked_to_logged_in_account(client):
+    """Đăng nhập C1 thì không đọc/ghi được bản code của C2 — chốt chống bias."""
+    pilot = client.get("/api/irr/videos", params={"role": "C1"}).json()
+    video_id = pilot["videos"][0]["video_id"]
+
+    assert client.get(f"/api/irr/C2/{video_id}").status_code == 403
+    assert client.patch(f"/api/irr/C2/{video_id}",
+                        json={"fields": COMPLETE}).status_code == 403
+    assert client.get("/api/irr/videos", params={"role": "C2"}).status_code == 403
+
+    # Vai trò của chính mình thì bình thường.
+    assert client.get(f"/api/irr/C1/{video_id}").status_code == 200
 
 
 def test_compare_blocked_until_both_coded(client):
@@ -218,8 +333,11 @@ def test_compare_blocked_until_both_coded(client):
     blocked = client.get(f"/api/irr/compare/{video_id}")
     assert blocked.status_code == 409
 
+    login(client, "C2")
     client.patch(f"/api/irr/C2/{video_id}",
                  json={"fields": dict(COMPLETE, y8_cta=2, y9_appeal=1)})
+    login(client, "C1")
+
     data = client.get(f"/api/irr/compare/{video_id}").json()
     assert data["agreement"]["total"] > 0
     diffs = {r["field"] for r in data["rows"] if not r["agree"]}

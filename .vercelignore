@@ -1,0 +1,13 @@
+# Không đẩy lên Vercel — giữ bundle nhỏ, tránh lộ dữ liệu nghiên cứu
+data.db
+data.db-wal
+data.db-shm
+seed/*.xlsx
+tests/
+docs/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+venv/
+SPEC.md

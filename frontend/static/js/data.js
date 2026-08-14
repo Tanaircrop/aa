@@ -1,6 +1,6 @@
 /* Trang Dữ liệu: import Excel, export, xem rule derived, cấu hình + chạy sync Sheets. */
 
-import { api, toast, escapeHtml, markActiveNav, downloadUrl } from './common.js';
+import { api, toast, escapeHtml, markActiveNav, downloadUrl, initSession } from './common.js';
 
 let pendingApply = null;
 
@@ -8,6 +8,7 @@ init().catch((err) => toast('Lỗi: ' + err.message, 'error'));
 
 async function init() {
   markActiveNav();
+  await initSession();
 
   const health = await api.get('/api/health');
   document.getElementById('db-info').textContent = 'DB: ' + health.db;

@@ -15,3 +15,8 @@ service_account*.json
 
 .pytest_cache/
 .DS_Store
+
+# Vercel
+.vercel/
+.env
+.env.local

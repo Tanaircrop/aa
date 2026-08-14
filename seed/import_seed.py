@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlmodel import Session  # noqa: E402
 
-from backend.database import DB_PATH, engine, init_db  # noqa: E402
+from backend.database import db_label, engine, init_db  # noqa: E402
 from backend.services.importer import import_workbook  # noqa: E402
 
 DEFAULT_FILE = Path(__file__).resolve().parent / "TikTok_Fashion_Research_Sheet_v2.xlsx"
@@ -47,7 +47,7 @@ def main() -> int:
         report = import_workbook(session, path,
                                  include_coding=not args.skip_coding)
 
-    print(f"Đã nạp vào {DB_PATH}\n")
+    print(f"Đã nạp vào {db_label()}\n")
     print(json.dumps(report, indent=2, ensure_ascii=False))
     return 0
 

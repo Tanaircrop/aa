@@ -1,14 +1,17 @@
-# TikTok Fashion Coding — app nhập liệu local
+# TikTok Fashion Coding — app nhập liệu
 
-App nhập liệu cho Codebook v4 (47 cột của sheet `3_Coding_Sheet`), chạy local trên
-máy bạn: FastAPI + SQLite + HTML/JS thuần, không cần build, không cần internet.
+App nhập liệu cho Codebook v4 (47 cột của sheet `3_Coding_Sheet`): FastAPI +
+HTML/JS thuần, không cần build. Chạy được hai kiểu:
+
+- **Local** — SQLite, một file `data.db`, không cần internet, không cần đăng nhập.
+- **Online (Vercel)** — Postgres, mỗi coder một tài khoản, hai người nhập cùng lúc.
 
 Mục tiêu: gõ 500 video bằng bàn phím mà không miss cột, không lệch hàng, các cột
 derived (X4c, ER%, X3, X4 band, QC_status) do app tự tính.
 
 ---
 
-## Chạy nhanh
+## Chạy local
 
 ```bash
 pip install -r requirements.txt
@@ -23,14 +26,89 @@ python app.py          # tự mở http://127.0.0.1:8000/app/coding.html
 ```
 
 Tuỳ chọn: `python app.py --port 8080 --no-browser`.
-Dữ liệu nằm trong `data.db` ở thư mục gốc (đổi bằng biến môi trường
-`TIKTOK_CODING_DB`).
+Dữ liệu nằm trong `data.db` ở thư mục gốc (đổi bằng `TIKTOK_CODING_DB`).
 
-Chạy test:
+Chạy local mà không muốn phải đăng nhập: đặt `DISABLE_AUTH=1`. **Chỉ dùng ở
+máy mình** — biến này bỏ qua toàn bộ kiểm tra quyền.
+
+Chạy test (84 test, chạy được ở bất kỳ thứ tự nào):
 
 ```bash
-pip install pytest httpx2 && python -m pytest tests/ -q
+pip install pytest httpx && python -m pytest tests/ -q
 ```
+
+---
+
+## Đưa lên Vercel
+
+Vercel chạy serverless: filesystem bị xoá sau mỗi request, nên **SQLite không
+dùng được** — phải có Postgres. Bốn bước:
+
+**1. Tạo database.** Trong dashboard Vercel: **Storage → Create Database →
+Postgres**. Tạo xong vào tab `.env.local` copy giá trị `POSTGRES_URL`.
+
+**2. Tạo bảng + đặt mật khẩu** (chạy ở máy mình, trỏ thẳng vào DB vừa tạo):
+
+```bash
+export DATABASE_URL='postgres://...'        # Windows: set DATABASE_URL=...
+
+python seed/bootstrap_remote.py --init      # tạo bảng, hỏi mật khẩu C1 và C2
+python seed/bootstrap_remote.py --import-xlsx seed/TikTok_Fashion.xlsx
+python seed/bootstrap_remote.py --status    # kiểm tra lại
+```
+
+Mật khẩu nhập bằng `getpass` nên không hiện lên màn hình và không vào shell
+history. Đổi về sau: `python seed/bootstrap_remote.py --set-password C2`.
+
+**3. Khai báo biến môi trường** ở Vercel → Settings → Environment Variables:
+
+| Biến | Giá trị | Bắt buộc |
+|---|---|---|
+| `DATABASE_URL` | connection string ở bước 1 | ✅ |
+| `SESSION_SECRET` | chuỗi ngẫu nhiên dài, VD `python -c "import secrets;print(secrets.token_hex(32))"` | ✅ |
+| `SKIP_DB_INIT` | `1` — bảng đã tạo ở bước 2, khỏi kiểm tra lại mỗi cold start | nên có |
+
+`SESSION_SECRET` là khoá ký cookie đăng nhập. Đổi giá trị này = đăng xuất tất cả
+mọi người ngay lập tức (dùng khi nghi lộ mật khẩu).
+
+**4. Deploy.**
+
+```bash
+npx vercel --prod
+```
+
+Hoặc nối repo GitHub vào Vercel để mỗi lần push là tự deploy.
+
+Xong thì mở `https://<project>.vercel.app` — app sẽ hỏi đăng nhập.
+`/api/health` để công khai (không cần đăng nhập) cho uptime check.
+
+### Sau khi deploy
+
+- Nạp thêm/cập nhật dữ liệu: dùng trang **Dữ liệu** trong app (upload `.xlsx`
+  qua trình duyệt) hoặc chạy lại `bootstrap_remote.py --import-xlsx`. Cả hai
+  đều idempotent.
+- Sao lưu: bấm xuất `full.xlsx` ở Dashboard, hoặc `pg_dump` từ connection string.
+- Vercel Hobby ngủ đông khi không ai dùng, nên request đầu tiên sau một lúc
+  vắng sẽ chậm vài giây (cold start). Không mất dữ liệu — dữ liệu nằm ở Postgres.
+
+---
+
+## Đăng nhập và phân quyền
+
+Mỗi coder một tài khoản (`C1`, `C2`). Đăng nhập rồi thì:
+
+- Ô "Coder" trên thanh trên cùng **không còn chọn tự do** — luôn là tài khoản
+  đang đăng nhập, nên `Coder_ID` không bao giờ bị ghi nhầm người.
+- Màn hình IRR **khoá vai trò theo tài khoản**: đăng nhập C1 thì chỉ code được
+  vai trò C1; gọi thẳng API của vai trò kia trả về `403`. Đây là chốt chống bias
+  thật sự — trước đây vai trò chỉ là một dropdown, ai cũng đổi được.
+- Toàn bộ `/api/*` (trừ `/api/health`) đòi cookie hợp lệ; mở thẳng một trang khi
+  chưa đăng nhập thì bị chuyển về `/app/login.html`.
+- Phiên giữ 30 ngày. Mật khẩu băm PBKDF2-HMAC-SHA256 (240k vòng, salt riêng từng
+  tài khoản) — không lưu mật khẩu thô ở đâu cả.
+
+Tài khoản `is_admin` bỏ qua được khoá vai trò IRR (để sửa dữ liệu khi cần).
+Mặc định C1/C2 **không** phải admin.
 
 ---
 
@@ -42,6 +120,7 @@ pip install pytest httpx2 && python -m pytest tests/ -q
 | Dashboard | `/app/dashboard.html` | KPI, biểu đồ, bảng "cần review", data grid sửa nhanh, xuất Excel/CSV |
 | IRR Pilot | `/app/irr.html` | Code song song C1/C2, màn hình so sánh, xuất ma trận IRR |
 | Dữ liệu | `/app/index.html` | Nạp file Excel, xuất file, xem rule derived, cấu hình sync Google Sheets |
+| Đăng nhập | `/app/login.html` | Trang duy nhất mở được khi chưa đăng nhập |
 
 API docs tự sinh ở `/docs`.
 
@@ -137,8 +216,10 @@ Nút "Chép cảnh báo vào Boundary_notes" ở panel phải dán nhanh toàn b
 
 ## IRR Pilot
 
-- Chọn vai trò C1 hoặc C2 trước khi code. API **không bao giờ** trả giá trị của vai
-  trò kia khi đang code (metadata thì vẫn auto-pull) — hai lượt code độc lập thật.
+- Vai trò khoá theo tài khoản đăng nhập (xem mục "Đăng nhập và phân quyền").
+  API **không bao giờ** trả giá trị của vai trò kia khi đang code (metadata thì
+  vẫn auto-pull), và gọi sang vai trò không phải của mình thì `403` — hai lượt
+  code độc lập thật.
 - Màn hình "So sánh" chỉ mở khi cả C1 và C2 đã code xong video đó (trước đó trả 409),
   tô đỏ field lệch, có ô "Ghi chú khác biệt" ứng với cột cuối sheet gốc.
 - App tính sẵn **% đồng thuận thô** để xem nhanh, và **cố ý không tự tính
@@ -181,14 +262,18 @@ service account, share sheet cho email service account (quyền Editor), rồi k
 ## Cấu trúc
 
 ```
+api/
+  index.py               Điểm vào cho Vercel (ASGI), chỉ là cầu nối tới backend/
+vercel.json              Rewrite mọi request vào api/index + includeFiles
 backend/
   app.py                 FastAPI entrypoint
   columns.py             ĐỊNH NGHĨA 47 CỘT — nguồn sự thật duy nhất
-  models.py              SQLModel: Account, Video, CodingEntry, IRREntry, ...
-  database.py            SQLite (WAL, autosave nhanh)
+  models.py              SQLModel: Coder, Account, Video, CodingEntry, IRREntry, ...
+  database.py            SQLite (local, WAL) hoặc Postgres (khi có DATABASE_URL)
   rules_config.json      Công thức derived + rule validate + scale IRR
-  routers/               meta · videos · coding · dashboard · irr · io_router · sync
+  routers/               auth · meta · videos · coding · dashboard · irr · io · sync
   services/
+    auth.py              Băm mật khẩu PBKDF2 + cookie phiên ký HMAC
     expr.py              Bộ đánh giá biểu thức an toàn cho rules_config
     derive.py            Tính cột derived
     validate.py          Ràng buộc logic mục 6
@@ -198,13 +283,14 @@ backend/
     quick_guide.py       Nội dung tooltip
     sheets_sync.py       Google Sheets (tuỳ chọn)
 frontend/
-  coding.html · dashboard.html · irr.html · index.html
-  static/js/  coding.js · dashboard.js · irr.js · data.js · charts.js · common.js
+  login.html · coding.html · dashboard.html · irr.html · index.html
+  static/js/  coding.js · dashboard.js · irr.js · data.js · login.js · charts.js · common.js
   static/css/style.css
 seed/
-  import_seed.py         CLI nạp file gốc
+  import_seed.py         CLI nạp file gốc vào DB local
+  bootstrap_remote.py    CLI tạo bảng / đặt mật khẩu / nạp dữ liệu lên Postgres
   make_demo_xlsx.py      Sinh dữ liệu demo
-tests/                   67 test cho derive, validate, expr và toàn bộ API
+tests/                   84 test: derive, validate, expr, API, auth, cấu hình deploy
 ```
 
 Thêm/sửa cột: sửa `backend/columns.py` và thêm field tương ứng vào
@@ -220,5 +306,13 @@ tự cập nhật theo.
 - **Tên cột trong file gốc**: cột 2 và cột 9 đều mang tiền tố `V1`
   (`V1 Video_ID` và `V1 Account_type`). App giữ nguyên header khi export để paste lại
   đúng, nhưng khoá nội bộ thì tách riêng (`video_id` / `account_type`).
-- `Coder_ID` được điền sẵn theo coder đang chọn khi mở video, nhưng chỉ tính là "của
-  coder đó" sau khi thực sự nhập gì đó — lướt qua không làm bẩn thống kê.
+- `Coder_ID` được điền sẵn theo tài khoản đang đăng nhập khi mở video, nhưng chỉ tính
+  là "của coder đó" sau khi thực sự nhập gì đó — lướt qua không làm bẩn thống kê.
+- **Không thêm thư viện cho phần đăng nhập**: băm mật khẩu và ký cookie đều dùng
+  `hashlib`/`hmac` của thư viện chuẩn, nên `requirements.txt` vẫn mỏng và cold start
+  trên Vercel không phải nạp thêm gì.
+- **Postgres trên serverless dùng `NullPool`**: mỗi lambda là một process sống rất
+  ngắn, giữ connection pool chỉ tổ ăn hết connection limit — việc gộp connection để
+  pooler của Vercel/Neon lo.
+- Muốn quay lại chạy local sau khi đã deploy: chỉ cần **bỏ** `DATABASE_URL`, app tự
+  về SQLite. Cùng một code, không có nhánh riêng cho production.

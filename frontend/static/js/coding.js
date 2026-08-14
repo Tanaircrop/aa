@@ -2,7 +2,7 @@
 
 import {
   api, toast, showTip, hideTip, guideHtml, escapeHtml, fmtNumber, fmtInt,
-  debounce, markActiveNav, coderStore, downloadUrl,
+  debounce, markActiveNav, downloadUrl, session, initSession,
 } from './common.js';
 
 const state = {
@@ -29,6 +29,7 @@ init().catch((err) => {
 
 async function init() {
   markActiveNav();
+  await initSession();
   cacheEls();
 
   state.schema = await api.get('/api/meta/schema');
@@ -56,20 +57,15 @@ function cacheEls() {
   els.form = document.getElementById('form-root');
   els.derived = document.getElementById('derived-panel');
   els.meta = document.getElementById('metastrip');
-  els.coder = document.getElementById('coder-select');
   els.saveState = document.getElementById('save-state');
 }
 
 function fillCoders() {
+  // Coder đang nhập = tài khoản đăng nhập (badge ở thanh trên). Dropdown dưới
+  // đây chỉ để *lọc* danh sách, không đổi được người đang code.
   const coders = state.schema.coders || [];
-  els.coder.innerHTML = coders
-    .map((c) => `<option value="${c.coder_id}">${escapeHtml(c.coder_id)}</option>`)
-    .join('');
   els.filterCoder.innerHTML = '<option value="">Mọi coder</option>'
     + coders.map((c) => `<option value="${c.coder_id}">${escapeHtml(c.coder_id)}</option>`).join('');
-  const saved = coderStore.get();
-  if (saved && coders.some((c) => c.coder_id === saved)) els.coder.value = saved;
-  else if (coders.length) coderStore.set(els.coder.value);
 }
 
 /* ---------------------------------------------------------------- Sidebar */
@@ -215,7 +211,7 @@ function renderControl(col) {
 
 async function loadVideo(videoId) {
   await flushPending();
-  const payload = await api.get(`/api/coding/${videoId}`, { coder: els.coder.value });
+  const payload = await api.get(`/api/coding/${videoId}`, { coder: session.coder_id });
   state.current = payload;
   state.currentId = videoId;
   fillForm(payload);
@@ -584,11 +580,6 @@ function bindEvents() {
   els.search.addEventListener('input', debounce(refreshList, 220));
   els.filterStatus.addEventListener('change', refreshList);
   els.filterCoder.addEventListener('change', refreshList);
-
-  els.coder.addEventListener('change', () => {
-    coderStore.set(els.coder.value);
-    toast('Coder hiện tại: ' + els.coder.value);
-  });
 
   els.list.addEventListener('click', (e) => {
     const row = e.target.closest('.vid-row');
