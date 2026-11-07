@@ -12,7 +12,9 @@ await new Promise((r) => setTimeout(r, 2500));
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const shots = [];
+const RUNS = (process.env.RUNS || 'desktop,teacher,mobile').split(',');
 async function run(name, { mobile = false, teacher = false, steps }) {
+  if (!RUNS.includes(name)) return;
   const ctx = await browser.newContext(mobile
     ? { viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' }
     : { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
@@ -58,7 +60,7 @@ await run('desktop', { steps: async (page) => {
   await settle(page, 800);
   await page.keyboard.press('Space'); await settle(page, 1500);
   await page.evaluate(() => document.exitPointerLock()); await settle(page, 300);
-  await page.click('text=Thư viện'); await settle(page, 1200);
+  await page.click('#hud-top button:has-text("Thư viện")'); await settle(page, 1200);
   await shot(page, '07-gallery.png', 'Thư viện ảnh (IndexedDB) sau khi chụp');
   await page.click('.thumbs .t'); await settle(page, 800);
   const c = await page.$('#annot canvas'); const b = await c.boundingBox();
@@ -73,7 +75,7 @@ await run('desktop', { steps: async (page) => {
 await run('teacher', { teacher: true, steps: async (page) => {
   await enter(page);
   await page.evaluate(() => document.exitPointerLock()); await settle(page, 300);
-  await page.click('text=Giảng viên'); await settle(page, 500);
+  await page.click('#hud-top button:has-text("Giảng viên")'); await settle(page, 500);
   await page.click('label:has-text("Overlay") input');
   await page.evaluate(() => { window.lva.player.teleport([-40, -30], 25, 28, -22); });
   await settle(page, 1500);
@@ -90,5 +92,5 @@ await run('mobile', { mobile: true, steps: async (page) => {
 await browser.close();
 server.kill();
 const fs = await import('node:fs');
-fs.writeFileSync(`${OUT}/README.md`, `# QA evidence\n\nẢnh chụp tự động từ bản build (scripts/evidence.mjs), Chromium headless, mức chất lượng medium.\n\n${shots.map(([f, l]) => `- \`${f}\`: ${l}`).join('\n')}\n`);
+if (RUNS.length === 3) fs.writeFileSync(`${OUT}/README.md`, `# QA evidence\n\nẢnh chụp tự động từ bản build (scripts/evidence.mjs), Chromium headless, mức chất lượng medium.\n\n${shots.map(([f, l]) => `- \`${f}\`: ${l}`).join('\n')}\n`);
 console.log('done');

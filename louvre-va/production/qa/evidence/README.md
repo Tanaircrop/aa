@@ -4,9 +4,8 @@
 
 - `01-intro.png`: Màn hình vào: tên nhóm, hình mẫu V+A, quy ước
 - `02-spawn-walk.png`: Đi bộ từ điểm xuất phát phía tây, nhìn về kim tự tháp
-- `03-answer-1-camera.png`: Vị trí 1: khung ngắm, V bờ hồ + A kim tự tháp
-- `03-answer-2-camera.png`: Vị trí 2: khung ngắm, V bờ hồ + A kim tự tháp
-- `03-answer-4-camera.png`: Vị trí 4: khung ngắm, V bờ hồ + A kim tự tháp
+- `03b-west-sunset-hands.png`: Nhìn thẳng về mặt trời lặn (hướng tây), tay cầm máy hạ thấp
+- `03c-west-sunset-camera.png`: Cùng góc, máy giơ lên: khung ngắm là màn LCD trong tay
 - `04-flycam-high.png`: Fly cam 35 m: toàn cảnh quảng trường
 - `05-window-richelieu-overcast.png`: Cửa sổ Richelieu, preset trời mưa, nhìn xuống hồ N
 - `06-pool-edge-noon-16mm.png`: Sát mép hồ E, nắng trưa, 16 mm
