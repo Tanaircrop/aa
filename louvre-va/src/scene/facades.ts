@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { config, wings, type Wing } from '../data/config';
 import { CollisionWorld } from '../gameplay/collision';
-import { limestoneTexture, slateTexture } from './textures';
+import { limestoneTexture, slateTexture, rusticatedTexture } from './textures';
 
 type M4 = THREE.Matrix4;
 const V = THREE.Vector3; const Q = THREE.Quaternion;
@@ -16,22 +16,32 @@ function instanced(geo: THREE.BufferGeometry, mat: THREE.Material, mats: M4[], s
 const at = (x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, ry = 0) =>
   new THREE.Matrix4().compose(new V(x, y, z), new Q().setFromAxisAngle(new V(0, 1, 0), ry), new V(sx, sy, sz));
 
-export interface FacadeMaterials { limestone: THREE.Material; limestoneDark: THREE.Material; slate: THREE.Material; zinc: THREE.Material; glass: THREE.Material; interior: THREE.Material; bronze: THREE.Material }
+export interface FacadeMaterials { limestone: THREE.MeshStandardMaterial; limestoneDark: THREE.Material; rustic: THREE.MeshStandardMaterial; slate: THREE.Material; zinc: THREE.Material; glass: THREE.Material; interior: THREE.Material; bronze: THREE.Material; stoneTex: THREE.Texture }
 
 export function facadeMaterials(): FacadeMaterials {
-  const lime = limestoneTexture(); lime.repeat.set(1, 1);
+  const lime = limestoneTexture(); lime.repeat.set(0.25, 0.25); // UVs in metres on extruded parts: 4 m per tile
   const limeMat = new THREE.MeshStandardMaterial({ map: lime, roughness: 0.85, metalness: 0.0 });
-  const limeDark = new THREE.MeshStandardMaterial({ map: lime, color: 0xb9ab8c, roughness: 0.9 });
+  const limeDark = new THREE.MeshStandardMaterial({ map: lime, color: 0xbdb39e, roughness: 0.9 });
+  const rus = rusticatedTexture(); rus.repeat.set(0.25, 0.25);
   const slate = slateTexture();
   return {
     limestone: limeMat,
     limestoneDark: limeDark,
+    rustic: new THREE.MeshStandardMaterial({ map: rus, roughness: 0.9 }),
+    stoneTex: lime,
     slate: new THREE.MeshStandardMaterial({ map: slate, roughness: 0.75, metalness: 0.1 }),
     zinc: new THREE.MeshStandardMaterial({ color: 0x8a9096, roughness: 0.45, metalness: 0.6 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x0e141a, roughness: 0.35, metalness: 0.35, envMapIntensity: 0.6 }),
     interior: new THREE.MeshStandardMaterial({ color: 0x17120d, roughness: 1 }),
     bronze: new THREE.MeshStandardMaterial({ color: 0x3c3a33, roughness: 0.5, metalness: 0.5 }),
   };
+}
+
+/** Limestone material whose texture tiles every 4 m across a box of the given face size. */
+function tiled(mats: FacadeMaterials, w: number, h: number, dark = false): THREE.MeshStandardMaterial {
+  const m = (dark ? mats.limestoneDark : mats.limestone).clone() as THREE.MeshStandardMaterial;
+  const t = mats.stoneTex.clone(); t.repeat.set(w / 4, h / 4); t.needsUpdate = true;
+  m.map = t; return m;
 }
 
 /**
@@ -51,9 +61,9 @@ function buildWing(w: Wing, mats: FacadeMaterials, detail: number, collision: Co
   const inPavilion = (s: number) => pav.find((p) => Math.abs(s - p.s) < p.w / 2);
 
   // main body: ground floor recessed by the wall thickness (arcade), upper floors flush
-  const body1 = new THREE.Mesh(new THREE.BoxGeometry(length, F.groundFloorHeight, D - T), mats.limestoneDark);
+  const body1 = new THREE.Mesh(new THREE.BoxGeometry(length, F.groundFloorHeight, D - T), tiled(mats, length, F.groundFloorHeight, true));
   body1.position.set(mid, F.groundFloorHeight / 2, -T - (D - T) / 2); body1.receiveShadow = true; body1.castShadow = true; g.add(body1);
-  const body2 = new THREE.Mesh(new THREE.BoxGeometry(length, F.corniceHeight - F.groundFloorHeight, D), mats.limestone);
+  const body2 = new THREE.Mesh(new THREE.BoxGeometry(length, F.corniceHeight - F.groundFloorHeight, D), tiled(mats, length, F.corniceHeight - F.groundFloorHeight));
   body2.position.set(mid, F.groundFloorHeight + (F.corniceHeight - F.groundFloorHeight) / 2, -D / 2); body2.receiveShadow = true; body2.castShadow = true; g.add(body2);
   // dark strip behind the arcade so the arches read as recessed openings
   const interior = new THREE.Mesh(new THREE.PlaneGeometry(length, F.groundFloorHeight), mats.interior);
@@ -67,8 +77,9 @@ function buildWing(w: Wing, mats: FacadeMaterials, detail: number, collision: Co
   hole.moveTo(-aw, 0); hole.lineTo(aw, 0); hole.lineTo(aw, F.archSpring); hole.absarc(0, F.archSpring, aw, 0, Math.PI, false); hole.lineTo(-aw, 0);
   archShape.holes.push(hole);
   const archGeo = new THREE.ExtrudeGeometry(archShape, { depth: T, bevelEnabled: false }); archGeo.translate(0, 0, -T);
-  const arches: M4[] = []; const windows: M4[] = []; const frames: M4[] = []; const columns: M4[] = []; const caps: M4[] = [];
-  const attics: M4[] = []; const balusters: M4[] = []; const dormers: M4[] = []; const chimneys: M4[] = []; const statues: M4[] = []; const keystones: M4[] = [];
+  const arches: M4[] = []; const windows: M4[] = []; const frames: M4[] = []; const columns: M4[] = []; const caps: M4[] = []; const bases: M4[] = [];
+  const attics: M4[] = []; const atticFrames: M4[] = []; const balusters: M4[] = []; const dormers: M4[] = []; const dormerRoofs: M4[] = []; const chimneys: M4[] = []; const statues: M4[] = []; const keystones: M4[] = [];
+  const pedTri: M4[] = []; const pedSeg: M4[] = []; const sills: M4[] = []; const dentils: M4[] = []; const imposts: M4[] = [];
   const nBays = Math.floor(length / F.bayWidth);
   const bayStart = mid - (nBays * F.bayWidth) / 2;
   const y1 = F.groundFloorHeight; const y2 = y1 + F.firstFloorHeight;
@@ -78,26 +89,46 @@ function buildWing(w: Wing, mats: FacadeMaterials, detail: number, collision: Co
     const front = p ? 2.5 : 0;
     arches.push(at(s, 0, front));
     keystones.push(at(s, F.archSpring + aw + 0.2, front + 0.15, 0.6, 0.9, 0.3));
-    // first floor window + frame
-    windows.push(at(s, y1 + 1.2 + F.windowHeight / 2, front + 0.03, F.windowWidth, F.windowHeight, 0.05));
-    frames.push(at(s, y1 + 1.2 + F.windowHeight / 2, front + 0.08, F.windowWidth + 0.5, F.windowHeight + 0.5, 0.12));
-    // paired columns on the bay boundaries
+    imposts.push(at(s - aw - 0.35, F.archSpring, front + 0.1, 0.7, 0.25, 0.3), at(s + aw + 0.35, F.archSpring, front + 0.1, 0.7, 0.25, 0.3));
+    // first floor: tall window with moulded frame, sill and a pediment (triangular / segmental alternating)
+    const wy = y1 + 1.2 + F.windowHeight / 2;
+    windows.push(at(s, wy, front + 0.03, F.windowWidth, F.windowHeight, 0.05));
+    frames.push(at(s, wy, front + 0.1, F.windowWidth + 0.6, F.windowHeight + 0.5, 0.16));
+    sills.push(at(s, y1 + 1.1, front + 0.25, F.windowWidth + 0.9, 0.22, 0.45));
+    (i % 2 === 0 ? pedTri : pedSeg).push(at(s, y1 + 1.2 + F.windowHeight + 0.35, front + 0.2));
+    // paired engaged columns on the bay boundaries, on pedestals, with capitals
     for (const off of [-0.55, 0.55]) {
       const cs = bayStart + i * F.bayWidth + off;
       columns.push(at(cs, y1 + (F.firstFloorHeight - 0.4) / 2 + 0.2, front + 0.45, 1, F.firstFloorHeight - 0.6, 1));
-      caps.push(at(cs, y2 - 0.35, front + 0.45, 0.95, 0.35, 0.95));
+      caps.push(at(cs, y2 - 0.35, front + 0.45, 1.0, 0.4, 1.0));
+      bases.push(at(cs, y1 + 0.25, front + 0.45, 1.0, 0.5, 1.0));
     }
-    // attic window
+    // attic: square window with moulded frame
     attics.push(at(s, y2 + F.atticHeight / 2, front + 0.03, F.windowWidth * 0.8, F.atticHeight * 0.5, 0.05));
+    atticFrames.push(at(s, y2 + F.atticHeight / 2, front + 0.08, F.windowWidth * 0.8 + 0.5, F.atticHeight * 0.5 + 0.5, 0.12));
     if (detail >= 0.7) {
       for (let b = 0; b < 6; b++) balusters.push(at(bayStart + i * F.bayWidth + (b + 0.5) * (F.bayWidth / 6), y1 + 0.45, front + 0.55, 1, 1, 1));
-      if (!p) dormers.push(at(s, F.corniceHeight + 2.2, -1.2));
+      // statue of a famous man on the balustrade in front of the column pair (86 of them line the courtyard)
+      statues.push(at(bayStart + i * F.bayWidth, y1 + 0.95, front + 0.8, 1, 1, 1));
+      if (!p) { dormers.push(at(s, F.corniceHeight + 2.2, -1.2)); dormerRoofs.push(at(s, F.corniceHeight + 3.35, -1.2)); }
+      for (let d = 0; d < 9; d++) dentils.push(at(bayStart + i * F.bayWidth + (d + 0.5) * (F.bayWidth / 9), F.corniceHeight - 1.1, front + 0.95, 0.3, 0.35, 0.35));
     }
     if (detail >= 0.9 && i % 3 === 1 && !p) chimneys.push(at(s, F.corniceHeight + F.roofHeight + 1.2, -D / 2));
   }
-  const col = instanced(new THREE.CylinderGeometry(0.38, 0.42, 1, 10), mats.limestone, columns); if (col) g.add(col);
+  const col = instanced(new THREE.CylinderGeometry(0.38, 0.42, 1, 12), mats.limestone, columns); if (col) g.add(col);
   const cap = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestone, caps); if (cap) g.add(cap);
-  const arch = instanced(archGeo, mats.limestone, arches); if (arch) g.add(arch);
+  const bas = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestoneDark, bases); if (bas) g.add(bas);
+  const arch = instanced(archGeo, mats.rustic, arches); if (arch) g.add(arch);
+  const imp = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestone, imposts, false); if (imp) g.add(imp);
+  const sil = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestone, sills, false); if (sil) g.add(sil);
+  const triShape = new THREE.Shape(); triShape.moveTo(-(F.windowWidth / 2 + 0.6), 0); triShape.lineTo(F.windowWidth / 2 + 0.6, 0); triShape.lineTo(0, 0.95); triShape.closePath();
+  const triGeo = new THREE.ExtrudeGeometry(triShape, { depth: 0.35, bevelEnabled: false });
+  const segShape = new THREE.Shape(); segShape.moveTo(-(F.windowWidth / 2 + 0.6), 0); segShape.lineTo(F.windowWidth / 2 + 0.6, 0); segShape.absarc(0, -0.9, F.windowWidth / 2 + 0.6 + 0.3, Math.asin(0.9 / (F.windowWidth / 2 + 0.9)), Math.PI - Math.asin(0.9 / (F.windowWidth / 2 + 0.9)), false); segShape.closePath();
+  const segGeo = new THREE.ExtrudeGeometry(segShape, { depth: 0.35, bevelEnabled: false });
+  const pt = instanced(triGeo, mats.limestone, pedTri); if (pt) g.add(pt);
+  const ps = instanced(segGeo, mats.limestone, pedSeg); if (ps) g.add(ps);
+  const den = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestone, dentils, false); if (den) g.add(den);
+  const afr = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestoneDark, atticFrames, false); if (afr) g.add(afr);
   const key = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestoneDark, keystones, false); if (key) g.add(key);
   const win = instanced(new THREE.BoxGeometry(1, 1, 1), mats.glass, windows, false); if (win) g.add(win);
   const fr = instanced(new THREE.BoxGeometry(1, 1, 1), mats.limestoneDark, frames, false); if (fr) g.add(fr);
@@ -114,7 +145,10 @@ function buildWing(w: Wing, mats: FacadeMaterials, detail: number, collision: Co
   // rotateY(-90deg): extrusion Z -> -X, shape X (depth) -> Z. Then shift so the roof spans sFrom..sTo.
   roofGeo.rotateY(-Math.PI / 2); roofGeo.translate(sTo, 0, 0);
   const roof = new THREE.Mesh(roofGeo, mats.slate); roof.castShadow = true; roof.receiveShadow = true; g.add(roof);
-  const dor = instanced(new THREE.BoxGeometry(1.6, 1.8, 1.6), mats.zinc, dormers); if (dor) g.add(dor);
+  const dor = instanced(new THREE.BoxGeometry(1.6, 1.8, 1.6), mats.limestoneDark, dormers); if (dor) g.add(dor);
+  const dorGlass = instanced(new THREE.BoxGeometry(0.9, 1.1, 0.1), mats.glass, dormers.map((m) => m.clone().multiply(new THREE.Matrix4().makeTranslation(0, -0.1, 0.8))), false); if (dorGlass) g.add(dorGlass);
+  const dorRoofGeo = new THREE.CylinderGeometry(0, 1.3, 0.9, 4, 1); dorRoofGeo.rotateY(Math.PI / 4);
+  const dorRoof = instanced(dorRoofGeo, mats.zinc, dormerRoofs); if (dorRoof) g.add(dorRoof);
   const chim = instanced(new THREE.BoxGeometry(1.2, 2.4, 1.0), mats.limestoneDark, chimneys); if (chim) g.add(chim);
 
   // pavilions: taller block in front with a square dome roof and statues on the roofline
@@ -133,11 +167,23 @@ function buildWing(w: Wing, mats: FacadeMaterials, detail: number, collision: Co
     dome.rotation.y = Math.PI / 4; dome.position.set(p.s, ph + F.domeHeight / 2, -D / 2 + 3); dome.castShadow = true; g.add(dome);
     const lantern = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.8, 3.5, 8), mats.zinc); lantern.position.set(p.s, ph + F.domeHeight + 1.7, -D / 2 + 3); g.add(lantern);
     const finial = new THREE.Mesh(new THREE.ConeGeometry(1.2, 3, 8), mats.zinc); finial.position.set(p.s, ph + F.domeHeight + 5, -D / 2 + 3); g.add(finial);
-    if (detail >= 0.7) for (let i = -2; i <= 2; i++) statues.push(at(p.s + i * (p.w / 5), ph + 1.5, 3.2, 1, 1, 1));
+    // rusticated quoins on the pavilion corners, central arched window, sculpture group in the pediment
+    for (const side of [-1, 1]) { const q = new THREE.Mesh(new THREE.BoxGeometry(1.4, ph - F.groundFloorHeight, 0.5), mats.rustic); q.position.set(p.s + side * (p.w / 2 - 0.7), F.groundFloorHeight + (ph - F.groundFloorHeight) / 2, 2.5 + 0.2); g.add(q); }
+    const bigArch = new THREE.Shape(); bigArch.moveTo(-2.2, 0); bigArch.lineTo(2.2, 0); bigArch.lineTo(2.2, 3.2); bigArch.absarc(0, 3.2, 2.2, 0, Math.PI, false); bigArch.closePath();
+    const bigWin = new THREE.Mesh(new THREE.ExtrudeGeometry(bigArch, { depth: 0.1, bevelEnabled: false }), mats.glass); bigWin.position.set(p.s, F.groundFloorHeight + 1.0, 2.5 + 0.05); g.add(bigWin);
+    const bigFrame = new THREE.Mesh(new THREE.ExtrudeGeometry(bigArch, { depth: 0.3, bevelEnabled: false }), mats.limestone); bigFrame.scale.set(1.18, 1.1, 1); bigFrame.position.set(p.s, F.groundFloorHeight + 0.8, 2.5 - 0.12); g.add(bigFrame);
+    if (detail >= 0.7) {
+      for (let i = -2; i <= 2; i++) statues.push(at(p.s + i * (p.w / 5), ph + 1.0, 3.0, 1, 1, 1));
+      for (let i = -1; i <= 1; i++) statues.push(at(p.s + i * 2.2, ph + 1.9, 2.9, 0.8, i === 0 ? 1.0 : 0.75, 0.8));
+    }
     if (p.dome) { const clock = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.2, 24), new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.4 })); clock.rotation.x = Math.PI / 2; clock.position.set(p.s, F.corniceHeight + 2.5, 5.1); g.add(clock); }
   }
-  const statGeo = new THREE.CapsuleGeometry(0.45, 1.6, 4, 8); statGeo.translate(0, 1.2, 0);
+  const statGeo = new THREE.CapsuleGeometry(0.38, 1.5, 4, 8); statGeo.translate(0, 1.5, 0);
   const stat = instanced(statGeo, mats.limestoneDark, statues); if (stat) g.add(stat);
+  const headGeo = new THREE.SphereGeometry(0.2, 8, 6); headGeo.translate(0, 2.55, 0);
+  const heads = instanced(headGeo, mats.limestoneDark, statues, false); if (heads) g.add(heads);
+  const plinthGeo = new THREE.BoxGeometry(0.9, 0.5, 0.9); plinthGeo.translate(0, 0.25, 0);
+  const plinths = instanced(plinthGeo, mats.limestone, statues, false); if (plinths) g.add(plinths);
 
   // collisions: body box + pavilion boxes in plan coordinates (done by the caller through the group transform)
   void collision;

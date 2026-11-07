@@ -5,7 +5,7 @@ import { config } from '../data/config';
 
 export class TouchControls {
   root: HTMLElement; btnFly: HTMLButtonElement; btnCam: HTMLButtonElement; btnShot: HTMLButtonElement; btnMap: HTMLButtonElement; btnBoost: HTMLButtonElement; btnUp: HTMLButtonElement; btnDown: HTMLButtonElement; height: HTMLElement; heightInput: HTMLInputElement;
-  onCamera: (() => void) | null = null; onShutter: (() => void) | null = null; onMap: (() => void) | null = null;
+  onCamera: (() => void) | null = null; onShutter: (() => void) | null = null; onMap: (() => void) | null = null; onZoom: ((dir: 1 | -1) => void) | null = null;
   constructor(private input: Input, private player: Player) {
     const joy = el('div', { id: 'joy' }, [el('div', { class: 'knob' })]);
     const look = el('div', { id: 'look' });
@@ -27,10 +27,16 @@ export class TouchControls {
     const end = (e: PointerEvent) => { if (e.pointerId !== jid) return; jid = -1; knob.style.transform = ''; input.joy.x = 0; input.joy.y = 0; };
     joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
     // look: drag on the right half
-    let lid = -1, lx = 0, ly = 0;
-    look.addEventListener('pointerdown', (e) => { lid = e.pointerId; lx = e.clientX; ly = e.clientY; look.setPointerCapture(e.pointerId); });
-    look.addEventListener('pointermove', (e) => { if (e.pointerId !== lid) return; player.touchLook.dx += (e.clientX - lx) * 1.6; player.touchLook.dy += (e.clientY - ly) * 1.6; lx = e.clientX; ly = e.clientY; });
-    const lend = (e: PointerEvent) => { if (e.pointerId === lid) lid = -1; };
+    // one finger: look. Two fingers: pinch to zoom (steps through the focal presets)
+    let lid = -1, lx = 0, ly = 0; const pts = new Map<number, [number, number]>(); let pinchD = 0;
+    const dist = () => { const v = [...pts.values()]; return v.length < 2 ? 0 : Math.hypot(v[0][0] - v[1][0], v[0][1] - v[1][1]); };
+    look.addEventListener('pointerdown', (e) => { pts.set(e.pointerId, [e.clientX, e.clientY]); look.setPointerCapture(e.pointerId); if (pts.size === 1) { lid = e.pointerId; lx = e.clientX; ly = e.clientY; } else { lid = -1; pinchD = dist(); } });
+    look.addEventListener('pointermove', (e) => {
+      if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size >= 2) { const d = dist(); if (Math.abs(d - pinchD) > 45) { this.onZoom?.(d > pinchD ? 1 : -1); pinchD = d; } return; }
+      if (e.pointerId !== lid) return; player.touchLook.dx += (e.clientX - lx) * 1.6; player.touchLook.dy += (e.clientY - ly) * 1.6; lx = e.clientX; ly = e.clientY;
+    });
+    const lend = (e: PointerEvent) => { pts.delete(e.pointerId); if (e.pointerId === lid) lid = -1; if (pts.size === 1) { const [id, p] = [...pts.entries()][0]; lid = id; lx = p[0]; ly = p[1]; } };
     look.addEventListener('pointerup', lend); look.addEventListener('pointercancel', lend);
     const hold = (b: HTMLButtonElement, key: keyof typeof input.touch) => { b.addEventListener('pointerdown', (e) => { e.preventDefault(); input.touch[key] = true; b.classList.add('on'); }); const off = () => { input.touch[key] = false; b.classList.remove('on'); }; b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off); };
     hold(this.btnBoost, 'boost'); hold(this.btnUp, 'up'); hold(this.btnDown, 'down');

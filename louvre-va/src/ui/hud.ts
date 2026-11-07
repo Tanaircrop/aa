@@ -16,7 +16,7 @@ export class Hud {
     const left = el('div', { id: 'hud-left' }, [el('div', { class: 'row' }, [this.group, this.timer]), el('div', { class: 'row' }, [this.tasks, this.mode])]);
     const right = el('div', { class: 'row' }, [this.btnTeacher, this.btnGallery, this.btnMenu]);
     this.root = el('div', { id: 'hud-top' }, [left, right]);
-    this.hints = el('div', { id: 'hints', html: isTouch ? '' : '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>F</kbd> bay · <kbd>E/Q</kbd> nâng/hạ máy · <kbd>C</kbd> hoặc chuột phải: máy ảnh · <kbd>Space</kbd> chụp · <kbd>M</kbd> bản đồ · <kbd>Esc</kbd> menu' });
+    this.hints = el('div', { id: 'hints', html: isTouch ? '' : '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>F</kbd> bay · <kbd>E/Q</kbd> nâng/hạ máy · <kbd>C</kbd> hoặc chuột phải: máy ảnh · <kbd>Space</kbd> chụp · con lăn hoặc <kbd>1</kbd>-<kbd>5</kbd>: zoom · <kbd>T</kbd> tỷ lệ · <kbd>L</kbd> lưới · <kbd>M</kbd> bản đồ · <kbd>Esc</kbd> menu' });
     this.fps = el('div', { id: 'fps' });
     ui().append(this.root, this.hints, this.fps, el('div', { id: 'crosshair' }));
   }

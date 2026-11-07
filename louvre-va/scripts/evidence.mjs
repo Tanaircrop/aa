@@ -27,7 +27,7 @@ async function run(name, { mobile = false, teacher = false, steps }) {
 }
 const settle = (page, ms = 1200) => page.waitForTimeout(ms);
 const shot = async (page, file, label) => { await page.screenshot({ path: `${OUT}/${file}`, timeout: 120000 }); shots.push([file, label]); console.log('shot', file); };
-const enter = async (page) => { await page.click('text=Bỏ qua xem mẫu'); await page.fill('input[placeholder^="Tên nhóm"]', 'QA'); await page.click('text=Vào quảng trường'); await settle(page, 800); };
+const enter = async (page) => { await page.click('text=Bỏ qua xem mẫu'); await page.fill('input[placeholder^="Tên nhóm"]', 'QA'); await page.click('text=Vào quảng trường'); await settle(page, 800); await page.evaluate(() => { document.exitPointerLock(); window.lva.player.touchLook.dx = 0; window.lva.player.touchLook.dy = 0; }); };
 
 await run('desktop', { steps: async (page) => {
   await shot(page, '01-intro.png', 'Màn hình vào: tên nhóm, hình mẫu V+A, quy ước');
@@ -38,6 +38,12 @@ await run('desktop', { steps: async (page) => {
     await settle(page);
     await shot(page, `03-answer-${i}-camera.png`, `Vị trí ${i}: khung ngắm, V bờ hồ + A kim tự tháp`);
   }
+  await page.evaluate(() => { window.lva.setCamera(false); window.lva.player.teleport([-60, -8], 180, 1.6, 0); });
+  await settle(page);
+  await shot(page, '03b-west-sunset-hands.png', 'Nhìn thẳng về mặt trời lặn (hướng tây), tay cầm máy hạ thấp');
+  await page.evaluate(() => { window.lva.setCamera(true); });
+  await settle(page);
+  await shot(page, '03c-west-sunset-camera.png', 'Cùng góc, máy giơ lên: khung ngắm là màn LCD trong tay');
   await page.evaluate(() => { window.lva.setCamera(false); window.lva.player.teleport([-60, -20], 15, 35, -20); });
   await settle(page);
   await shot(page, '04-flycam-high.png', 'Fly cam 35 m: toàn cảnh quảng trường');

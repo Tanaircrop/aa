@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { QualitySettings } from './quality';
+import { config } from '../data/config';
 
 export class Engine {
   renderer: THREE.WebGLRenderer;
@@ -26,6 +27,7 @@ export class Engine {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = settings.shadows;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.info.autoReset = false;
     this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 6000);
     this.camera.rotation.order = 'YXZ';
     this.applyQuality(settings);
@@ -40,7 +42,7 @@ export class Engine {
     if (s.postprocessing) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.18, 0.6, 0.92);
+      const b = config.lighting.bloom; const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), b.strength, b.radius, b.threshold);
       this.composer.addPass(bloom);
       this.composer.addPass(new OutputPass());
     } else {
@@ -67,6 +69,7 @@ export class Engine {
       const dt = Math.min(this.clock.getDelta(), 0.1);
       const t = this.clock.elapsedTime;
       for (const u of this.updaters) u(dt, t);
+      this.renderer.info.reset();
       this.renderFrame();
       this.fpsAcc += dt; this.fpsN++;
       if (this.fpsAcc > 0.5) { this.stats.fps = Math.round(this.fpsN / this.fpsAcc); this.fpsAcc = 0; this.fpsN = 0; }

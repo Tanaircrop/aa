@@ -133,6 +133,7 @@ if (isTouch) {
   touch.onCamera = () => setCamera(!photo.on);
   touch.onShutter = () => shoot();
   touch.onMap = () => minimap.toggle();
+  touch.onZoom = (dir) => { if (photo.on) photo.zoom(dir); };
   touch.setVisible(true);
 }
 session.onReminder = (m) => toast(m, 5000);
@@ -169,6 +170,11 @@ engine.onUpdate((dt, t) => {
     if (input.justPressed('BracketRight')) photo.cycleFocal(1);
     if (input.justPressed('BracketLeft')) photo.cycleFocal(-1);
     if (input.justPressed('KeyG')) galleryPanel.show();
+    if (input.justPressed('KeyT') && photo.on) vf.cycleAspect();
+    if (input.justPressed('KeyL') && photo.on) vf.cycleGrid();
+    for (let i = 0; i < 5; i++) if (input.justPressed(`Digit${i + 1}`) && photo.on) photo.setFocalIndex(i);
+    const wheel = input.consumeWheel();
+    if (wheel) { if (photo.on) photo.zoom(wheel < 0 ? 1 : -1); else if (player.mode === 'fly') player.adjustFlySpeed(wheel); }
   }
   if (input.justPressed('Escape')) { releaseForUi(); if (galleryPanel.annot.root) galleryPanel.annot.close(); else if (uiOpen) { galleryPanel.hide(); menu.hide(); teacherPanel?.hide(); } else menu.show(); }
   player.update(dt);
@@ -180,7 +186,7 @@ engine.onUpdate((dt, t) => {
   session.update(dt);
   hud.update(session, player, engine.stats);
   minimap.draw(player, photo.focal, photo.aspect, photo.on);
-  if (photo.on) vf.draw(player);
+  vf.draw(player, photo.on, dt);
   touch?.update(photo.on);
   input.endFrame();
 });

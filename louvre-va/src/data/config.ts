@@ -12,7 +12,7 @@ export interface Wing {
 export interface Pose { pos: Vec2; height: number; headingDeg: number; pitchDeg?: number; focal?: number }
 export interface LightingPreset {
   label: string; utc: string; sky: 'clear' | 'overcast'; turbidity: number; rayleigh: number;
-  sunIntensity: number; ambient: number; fog: number; rain?: boolean; exposure?: number; envIntensity?: number;
+  sunIntensity: number; ambient: number; fog: number; rain?: boolean; exposure?: number; envIntensity?: number; mie?: number; mieG?: number; env?: { top: number[]; bottom: number[]; ground: number[] };
 }
 export interface ReferencePhoto { id: string; label: string; preset: string; pose: Pose; note: string }
 

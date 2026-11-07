@@ -38,9 +38,20 @@ Hệ toạ độ: mặt bằng `x` hướng đông (Sully), `y` hướng bắc (
 - **M3** màn hình vào (tên nhóm, hình mẫu, 30 giây), đồng hồ đếm ngược với 2 mốc nhắc (60 % và 80 % thời lượng), khoá chụp + 1 phút xuất bài, vẽ A nét liền / V nét đứt / chấm đỏ / ghi chú, xuất PNG từng ảnh và trang tổng hợp; chế độ giảng viên (PIN, thời gian 5/10/15, đám đông, bay, ánh sáng, overlay 5 đáp án xanh + T1/T2 + V phối cảnh vàng, nút "đến vị trí", 3 tư thế ảnh mẫu với "đến góc này" và thanh trượt so sánh, thêm ảnh mẫu lúc chạy).
 - **M4** mặt tiền module (vòm cửa, cột đôi, cửa sổ, lan can, mái mansard, dormer, ống khói, tượng, pavilion có mái vòm) bằng InstancedMesh; kim tự tháp khung thép lưới thoi 17 hàng, kính transmission (mức cao) / env map (trung, thấp); nước phản chiếu planar (cao) / env map; đài phun particle; 3 preset ánh sáng theo vị trí mặt trời thật của Paris; mưa; hậu cảnh Tuileries, tháp Eiffel, vòng quay đúng hướng; đám đông instanced; 3 mức chất lượng tự chọn theo thiết bị; tải dần (hồ + kim tự tháp trước, mặt tiền và hậu cảnh sau); bloom (cao); deploy Vercel, noindex.
 
+## Điều khiển máy ảnh
+
+Bật máy: `C` hoặc chuột phải (điện thoại: nút 📷). Máy ảnh hiện trong tay ở góc dưới phải khi chưa bật, giơ lên khi bật.
+Zoom: con lăn chuột, phím `1`-`5`, hoặc pinch 2 ngón trên điện thoại (bước qua 16 / 24 / 35 / 50 / 85 mm).
+`T` đổi tỷ lệ khung, `L` đổi lưới, `Z`/`X` nghiêng máy, `Space` chụp. `Esc` thả chuột để bấm nút trên khung ngắm.
+
+## Tải và hiệu năng
+
+Trang tĩnh trên CDN Vercel, không backend. Test 30 thiết bị vào cùng lúc: xem [`production/qa/loadtest.md`](production/qa/loadtest.md).
+
 ## Khác với spec (ghi rõ để làm tiếp)
 
-- Texture và bầu trời là **procedural** (canvas + Sky shader của Three.js), chưa dùng KTX2 / HDRI Poly Haven. Dung lượng tải cả game ≈ 240 KB gzip, dưới ngân sách 15 MB rất xa; có thể thêm PBR thật sau.
+- Texture và bầu trời là **procedural** (canvas + Sky shader của Three.js), chưa dùng KTX2 / HDRI Poly Haven. Dung lượng tải cả game ≈ 240 KB gzip, dưới ngân sách 15 MB rất xa.
+- **Giống 100 % ngoài đời** không đạt được bằng hình khối procedural. Mặt tiền hiện dựng đúng nhịp: vòm rustic tầng trệt, cột đôi, cửa sổ có pediment tam giác / cung xen kẽ, tượng trên lan can, tầng áp mái, dentil, mái mansard có dormer, pavilion có cửa vòm lớn và mái vòm. Muốn chính xác từng phù điêu phải thay `src/scene/facades.ts` bằng một trong hai nguồn: (a) mô hình 3D Louvre có bản quyền sử dụng (Sketchfab / CGTrader, định dạng glTF, nạp bằng `GLTFLoader`), hoặc (b) bản quét Gaussian Splatting (spec M5). Hồ, kim tự tháp, va chạm và đáp án vẫn lấy từ `scene.config.json` nên không đổi.
 - Chưa có 3 **ảnh kết quả mẫu thật** của giảng viên (không có trong repo). Ba tư thế máy đã khai báo trong config kèm ghi chú giả định; giảng viên gắn ảnh thật qua panel (lưu IndexedDB) rồi dùng thanh trượt so sánh. Kiểm tra lệch ≤ 2 % cần ảnh thật để đo.
 - Kích thước cánh nhà, tượng, Arc là ước lượng như spec cho phép; nhịp cửa 5,6 m. Cần đo lại theo ảnh tham chiếu khi có.
 - SSAO và bóng cascaded chưa bật (bloom + PCFSoft 4096 ở mức cao).

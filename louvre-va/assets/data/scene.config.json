@@ -556,15 +556,34 @@
     "presets": {
       "sunset": {
         "label": "Hoàng hôn",
-        "utc": "2026-06-21T19:15:00Z",
+        "utc": "2026-06-21T18:25:00Z",
         "sky": "clear",
-        "turbidity": 6,
-        "rayleigh": 2.5,
-        "sunIntensity": 2.4,
-        "ambient": 0.35,
-        "fog": 0.00012,
-        "exposure": 1.0,
-        "envIntensity": 0.7
+        "turbidity": 5,
+        "rayleigh": 2.4,
+        "sunIntensity": 2.3,
+        "ambient": 0.5,
+        "fog": 7e-05,
+        "exposure": 0.78,
+        "envIntensity": 0.85,
+        "mie": 0.0035,
+        "mieG": 0.76,
+        "env": {
+          "top": [
+            0.3,
+            0.4,
+            0.75
+          ],
+          "bottom": [
+            1.5,
+            0.95,
+            0.6
+          ],
+          "ground": [
+            0.35,
+            0.28,
+            0.22
+          ]
+        }
       },
       "overcast": {
         "label": "Trời mây mưa",
@@ -577,7 +596,24 @@
         "fog": 0.0009,
         "rain": true,
         "exposure": 0.85,
-        "envIntensity": 0.7
+        "envIntensity": 0.7,
+        "env": {
+          "top": [
+            0.75,
+            0.8,
+            0.88
+          ],
+          "bottom": [
+            1.7,
+            1.75,
+            1.8
+          ],
+          "ground": [
+            0.35,
+            0.33,
+            0.3
+          ]
+        }
       },
       "noon": {
         "label": "Nắng trưa",
@@ -588,9 +624,33 @@
         "sunIntensity": 2.0,
         "ambient": 0.4,
         "fog": 6e-05,
-        "exposure": 0.5,
-        "envIntensity": 0.35
+        "exposure": 0.6,
+        "envIntensity": 0.45,
+        "mie": 0.0015,
+        "mieG": 0.65,
+        "env": {
+          "top": [
+            0.4,
+            0.55,
+            0.9
+          ],
+          "bottom": [
+            1.0,
+            1.0,
+            1.05
+          ],
+          "ground": [
+            0.4,
+            0.38,
+            0.35
+          ]
+        }
       }
+    },
+    "bloom": {
+      "strength": 0.12,
+      "radius": 0.3,
+      "threshold": 2.0
     }
   },
   "session": {

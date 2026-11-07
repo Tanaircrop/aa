@@ -34,6 +34,12 @@ export class PhotoCamera {
     cam.updateProjectionMatrix();
   }
 
+  setFocalIndex(i: number) { const f = config.camera.focals; if (i >= 0 && i < f.length) this.focal = f[i]; }
+  /** Zoom in (+1, longer focal) or out (-1), clamped to the preset list. */
+  zoom(dir: 1 | -1) {
+    const f = config.camera.focals; const i = f.indexOf(this.focal);
+    this.focal = f[Math.max(0, Math.min(f.length - 1, i + dir))];
+  }
   cycleFocal(dir: 1 | -1) {
     const f = config.camera.focals; const i = f.indexOf(this.focal);
     this.focal = f[(i + dir + f.length) % f.length];

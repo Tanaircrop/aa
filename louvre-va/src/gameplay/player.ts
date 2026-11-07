@@ -40,6 +40,11 @@ export class Player {
     this.vel.set(0, 0, 0);
   }
 
+  adjustFlySpeed(steps: number) {
+    const P = config.player;
+    this.flySpeed = Math.max(P.flySpeedMin, Math.min(P.flySpeedMax, this.flySpeed - steps));
+  }
+
   toggleMode() {
     if (this.mode === 'walk') { if (!this.flyEnabled) return; this.mode = 'fly'; this.vel.set(0, 0, 0); }
     else { this.mode = 'walk'; }
@@ -62,8 +67,6 @@ export class Player {
     if (inp.down('KeyZ')) this.roll -= dt * 0.6;
     if (inp.down('KeyX')) this.roll += dt * 0.6;
     if (inp.justPressed('KeyF') || inp.touch.fly) { inp.touch.fly = false; this.toggleMode(); }
-    const wheel = inp.consumeWheel();
-    if (wheel) this.flySpeed = Math.max(P.flySpeedMin, Math.min(P.flySpeedMax, this.flySpeed - wheel));
 
     // movement input in the camera's local frame (forward/right), plan coordinates
     let f = 0, r = 0;

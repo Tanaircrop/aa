@@ -24,9 +24,9 @@ export class Environment {
     this.overcastDome = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false,
       // linear radiance: bright grey near the horizon, darker grey overhead, tone mapped like the rest of the scene
-      uniforms: { top: { value: new THREE.Vector3(0.75, 0.8, 0.88) }, bottom: { value: new THREE.Vector3(1.7, 1.75, 1.8) } },
+      uniforms: { top: { value: new THREE.Vector3(0.75, 0.8, 0.88) }, bottom: { value: new THREE.Vector3(1.7, 1.75, 1.8) }, ground: { value: new THREE.Vector3(0.35, 0.3, 0.25) } },
       vertexShader: 'varying vec3 vW; void main(){ vW = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position,1.0); p.z = p.w; gl_Position = p; }',
-      fragmentShader: 'uniform vec3 top; uniform vec3 bottom; varying vec3 vW; void main(){ float t = clamp(vW.y * 1.6 + 0.1, 0.0, 1.0); gl_FragColor = vec4(mix(bottom, top, t), 1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
+      fragmentShader: 'uniform vec3 top; uniform vec3 bottom; uniform vec3 ground; varying vec3 vW; void main(){ float t = clamp(vW.y * 1.6 + 0.1, 0.0, 1.0); vec3 c = mix(bottom, top, t); if (vW.y < 0.0) c = mix(bottom, ground, clamp(-vW.y * 4.0, 0.0, 1.0)); gl_FragColor = vec4(c, 1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
     }));
     this.overcastDome.scale.setScalar(5000); this.overcastDome.visible = false; this.overcastDome.frustumCulled = false;
     scene.add(this.overcastDome);
@@ -57,8 +57,8 @@ export class Environment {
     const u = this.sky.material.uniforms;
     u.turbidity.value = p.turbidity;
     u.rayleigh.value = p.rayleigh;
-    u.mieCoefficient.value = p.sky === 'overcast' ? 0.08 : 0.005;
-    u.mieDirectionalG.value = p.sky === 'overcast' ? 0.6 : 0.8;
+    u.mieCoefficient.value = p.mie ?? 0.005;
+    u.mieDirectionalG.value = p.mieG ?? 0.8;
     u.sunPosition.value.copy(this.sunDir);
     this.sun.position.copy(this.sunDir).multiplyScalar(400);
     this.sun.target.position.set(0, 0, 0);
@@ -74,9 +74,16 @@ export class Environment {
     this.envRT?.dispose();
     const overcast = p.sky === 'overcast';
     this.sky.visible = !overcast; this.overcastDome.visible = overcast;
-    const tmp = new THREE.Scene(); const src = overcast ? this.overcastDome : this.sky; tmp.add(src); src.visible = true;
+    // Environment light always comes from the gradient dome: the Sky shader's sun disk (x19000) would
+    // otherwise dominate the irradiance and wash the whole scene out when the sun is low.
+    const dome = this.overcastDome.material as THREE.ShaderMaterial;
+    const col = p.env ?? { top: [0.3, 0.45, 0.8], bottom: [1.0, 0.95, 0.9], ground: [0.35, 0.3, 0.25] };
+    (dome.uniforms.top.value as THREE.Vector3).fromArray(col.top);
+    (dome.uniforms.bottom.value as THREE.Vector3).fromArray(col.bottom);
+    (dome.uniforms.ground.value as THREE.Vector3).fromArray(col.ground);
+    const tmp = new THREE.Scene(); tmp.add(this.overcastDome); this.overcastDome.visible = true;
     this.envRT = this.pmrem.fromScene(tmp as unknown as THREE.Scene, 0.04);
-    this.scene.add(src);
+    this.scene.add(this.overcastDome); this.overcastDome.visible = overcast;
     this.scene.environment = this.envRT.texture;
     this.scene.environmentIntensity = p.envIntensity ?? 0.7;
     this.renderer.toneMappingExposure = p.exposure ?? 1.0;

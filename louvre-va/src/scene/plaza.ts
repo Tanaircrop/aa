@@ -69,10 +69,11 @@ export function buildPlaza(scene: THREE.Scene, collision: CollisionWorld, settin
 
   // ground: courtyard paving + surrounding asphalt
   const paving = pavingTexture(); paving.repeat.set(60, 60);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(480, 480), new THREE.MeshStandardMaterial({ map: paving, roughness: 0.9, metalness: 0.02 }));
+  // MeshPhysicalMaterial with low specularIntensity: dry stone must not turn into a mirror at grazing angles toward the low sun
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(480, 480), new THREE.MeshPhysicalMaterial({ map: paving, roughness: 0.95, metalness: 0, specularIntensity: 0.15, envMapIntensity: 0.4 }));
   ground.rotation.x = -Math.PI / 2; ground.position.set(-60, 0, 0); ground.receiveShadow = true; g.add(ground);
   const asphalt = asphaltTexture(); asphalt.repeat.set(400, 400);
-  const far = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshStandardMaterial({ map: asphalt, roughness: 1 }));
+  const far = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshPhysicalMaterial({ map: asphalt, roughness: 1, specularIntensity: 0.1, envMapIntensity: 0.3 }));
   far.rotation.x = -Math.PI / 2; far.position.y = -0.05; far.receiveShadow = true; g.add(far);
 
   // pools
