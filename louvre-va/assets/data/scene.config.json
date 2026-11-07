@@ -1,0 +1,666 @@
+{
+  "source": "OpenStreetMap (ODbL), rotated 20.2 deg to the courtyard axis",
+  "axes": "x = east (Sully), y = north (Richelieu), origin = pyramid center. Three.js: X = x, Z = -y, Y up",
+  "courtyardRotationDeg": 20.2,
+  "latitude": 48.861,
+  "longitude": 2.3358,
+  "mainPyramid": {
+    "corners": [
+      [
+        -18.3,
+        18.4
+      ],
+      [
+        18.7,
+        18.0
+      ],
+      [
+        18.1,
+        -18.1
+      ],
+      [
+        -18.4,
+        -18.1
+      ]
+    ],
+    "height": 21.6,
+    "latticeRows": 17
+  },
+  "smallPyramids": [
+    {
+      "id": "N",
+      "center": [
+        0.9,
+        45.3
+      ],
+      "side": 7.9,
+      "rotationDeg": 45,
+      "height": 5
+    },
+    {
+      "id": "E",
+      "center": [
+        46.1,
+        -0.3
+      ],
+      "side": 7.9,
+      "rotationDeg": 45,
+      "height": 5
+    },
+    {
+      "id": "S",
+      "center": [
+        -0.1,
+        -45.3
+      ],
+      "side": 7.9,
+      "rotationDeg": 45,
+      "height": 5
+    }
+  ],
+  "poolRimHeight": 0.5,
+  "poolRimWidth": 0.6,
+  "poolWalkwayWidth": 2.5,
+  "pools": [
+    {
+      "id": "N_inner",
+      "pts": [
+        [
+          -18.3,
+          18.4
+        ],
+        [
+          0.4,
+          35.9
+        ],
+        [
+          18.7,
+          18.0
+        ]
+      ]
+    },
+    {
+      "id": "E_inner",
+      "pts": [
+        [
+          18.7,
+          18.0
+        ],
+        [
+          36.4,
+          -0.3
+        ],
+        [
+          18.1,
+          -18.1
+        ]
+      ]
+    },
+    {
+      "id": "S_inner",
+      "pts": [
+        [
+          18.1,
+          -18.1
+        ],
+        [
+          -0.1,
+          -35.8
+        ],
+        [
+          -18.4,
+          -18.1
+        ]
+      ]
+    },
+    {
+      "id": "NE_corner",
+      "pts": [
+        [
+          37.7,
+          2.2
+        ],
+        [
+          2.2,
+          37.6
+        ],
+        [
+          38.0,
+          36.9
+        ]
+      ]
+    },
+    {
+      "id": "SE_corner",
+      "pts": [
+        [
+          1.7,
+          -37.5
+        ],
+        [
+          37.7,
+          -2.8
+        ],
+        [
+          37.2,
+          -37.7
+        ]
+      ]
+    },
+    {
+      "id": "NW_half",
+      "pts": [
+        [
+          -1.4,
+          37.7
+        ],
+        [
+          -19.9,
+          20.2
+        ],
+        [
+          -36.9,
+          38.3
+        ]
+      ]
+    },
+    {
+      "id": "SW_half",
+      "pts": [
+        [
+          -1.8,
+          -37.6
+        ],
+        [
+          -38.0,
+          -37.2
+        ],
+        [
+          -20.3,
+          -19.8
+        ]
+      ]
+    }
+  ],
+  "fountains": [
+    {
+      "pool": "N_inner",
+      "jets": 5
+    },
+    {
+      "pool": "E_inner",
+      "jets": 5
+    },
+    {
+      "pool": "S_inner",
+      "jets": 5
+    }
+  ],
+  "wings": [
+    {
+      "id": "Richelieu",
+      "side": "north",
+      "facadeY": 82,
+      "depth": 42,
+      "xFrom": -135,
+      "xTo": 78,
+      "pavilions": [
+        {
+          "name": "Turgot",
+          "x": -98,
+          "width": 22
+        },
+        {
+          "name": "Richelieu",
+          "x": -28,
+          "width": 26,
+          "dome": true
+        },
+        {
+          "name": "Colbert",
+          "x": 42,
+          "width": 22
+        }
+      ]
+    },
+    {
+      "id": "Denon",
+      "side": "south",
+      "facadeY": -82,
+      "depth": 42,
+      "xFrom": -135,
+      "xTo": 78,
+      "pavilions": [
+        {
+          "name": "Mollien",
+          "x": -98,
+          "width": 22
+        },
+        {
+          "name": "Denon",
+          "x": -28,
+          "width": 26,
+          "dome": true
+        },
+        {
+          "name": "Daru",
+          "x": 42,
+          "width": 22
+        }
+      ]
+    },
+    {
+      "id": "Sully",
+      "side": "east",
+      "facadeX": 78,
+      "depth": 36,
+      "yFrom": -82,
+      "yTo": 82,
+      "pavilions": [
+        {
+          "name": "Horloge",
+          "x": 0,
+          "width": 30,
+          "dome": true
+        }
+      ]
+    }
+  ],
+  "facade": {
+    "bayWidth": 5.6,
+    "groundFloorHeight": 7.5,
+    "firstFloorHeight": 7.0,
+    "atticHeight": 4.5,
+    "corniceHeight": 19.0,
+    "roofHeight": 8.0,
+    "pavilionExtraHeight": 6.0,
+    "domeHeight": 9.0,
+    "wallThickness": 1.6,
+    "archWidth": 3.4,
+    "archSpring": 3.6,
+    "windowWidth": 2.1,
+    "windowHeight": 3.8
+  },
+  "statueLouisXIV": {
+    "pos": [
+      -100,
+      -4
+    ],
+    "height": 6,
+    "baseRadius": 3.5
+  },
+  "arcDuCarrousel": {
+    "pos": [
+      -290,
+      -8
+    ],
+    "rotationDeg": 6,
+    "width": 19,
+    "depth": 7,
+    "height": 19
+  },
+  "lampPosts": {
+    "height": 4,
+    "rows": [
+      {
+        "from": [
+          -130,
+          72
+        ],
+        "to": [
+          70,
+          72
+        ],
+        "count": 14
+      },
+      {
+        "from": [
+          -130,
+          -72
+        ],
+        "to": [
+          70,
+          -72
+        ],
+        "count": 14
+      },
+      {
+        "from": [
+          70,
+          -60
+        ],
+        "to": [
+          70,
+          60
+        ],
+        "count": 7
+      }
+    ]
+  },
+  "walkBounds": {
+    "xMin": -232,
+    "xMax": 76,
+    "yMin": -79,
+    "yMax": 79
+  },
+  "flyBounds": {
+    "xMin": -100,
+    "xMax": 100,
+    "yMin": -100,
+    "yMax": 100,
+    "zMin": 0.3,
+    "zMax": 60
+  },
+  "player": {
+    "eyeHeight": 1.6,
+    "walkSpeed": 1.4,
+    "runSpeed": 4.0,
+    "radius": 0.35,
+    "cameraHeightMin": 0.3,
+    "cameraHeightMax": 2.0,
+    "flySpeedMin": 1,
+    "flySpeedMax": 15,
+    "flySpeedDefault": 5
+  },
+  "spawn": {
+    "pos": [
+      -70,
+      -8
+    ],
+    "headingDeg": 0
+  },
+  "teleports": [
+    {
+      "name": "Tây bắc (gần Turgot)",
+      "pos": [
+        -72,
+        62
+      ],
+      "headingDeg": -40
+    },
+    {
+      "name": "Tây nam (gần Mollien)",
+      "pos": [
+        -72,
+        -62
+      ],
+      "headingDeg": 40
+    },
+    {
+      "name": "Đông bắc (gần Colbert)",
+      "pos": [
+        58,
+        70
+      ],
+      "headingDeg": -130
+    },
+    {
+      "name": "Đông nam (gần Daru)",
+      "pos": [
+        58,
+        -70
+      ],
+      "headingDeg": 130
+    },
+    {
+      "name": "Lối vào phía tây",
+      "pos": [
+        -128,
+        0
+      ],
+      "headingDeg": 0
+    }
+  ],
+  "windows": [
+    {
+      "name": "Cửa sổ Sully (bắc)",
+      "pos": [
+        76.5,
+        28
+      ],
+      "height": 14.5,
+      "headingDeg": 190
+    },
+    {
+      "name": "Cửa sổ Sully (nam)",
+      "pos": [
+        76.5,
+        -28
+      ],
+      "height": 14.5,
+      "headingDeg": 170
+    },
+    {
+      "name": "Cửa sổ Richelieu",
+      "pos": [
+        -40,
+        80.5
+      ],
+      "height": 14.5,
+      "headingDeg": -65
+    },
+    {
+      "name": "Cửa sổ Denon",
+      "pos": [
+        -40,
+        -80.5
+      ],
+      "height": 14.5,
+      "headingDeg": 65
+    }
+  ],
+  "camera": {
+    "sensor": [
+      36,
+      24
+    ],
+    "focals": [
+      16,
+      24,
+      35,
+      50,
+      85
+    ],
+    "defaultFocal": 24,
+    "aspects": {
+      "3:2": 1.5,
+      "4:5": 0.8,
+      "1:1": 1,
+      "16:9": 1.7778
+    },
+    "defaultAspect": "3:2",
+    "photoLongEdge": 1800,
+    "maxPhotosPerGroup": 20
+  },
+  "answers": {
+    "coincidentCornerTolerance": 1.0,
+    "angleToleranceDeg": 1.5,
+    "expectedStandard": [
+      {
+        "n": 1,
+        "pool": "N_inner",
+        "approx": [
+          0,
+          36
+        ],
+        "lookDeg": -90,
+        "focal": "16-20 mm",
+        "note": "Chính diện, đối xứng"
+      },
+      {
+        "n": 2,
+        "pool": "E_inner",
+        "approx": [
+          36,
+          0
+        ],
+        "lookDeg": 180,
+        "focal": "16-20 mm",
+        "note": "Chính diện, hậu cảnh Arc du Carrousel"
+      },
+      {
+        "n": 3,
+        "pool": "S_inner",
+        "approx": [
+          0,
+          -36
+        ],
+        "lookDeg": 90,
+        "focal": "16-20 mm",
+        "note": "Chính diện, đối xứng"
+      },
+      {
+        "n": 4,
+        "pool": "NE_corner",
+        "approx": [
+          38,
+          37
+        ],
+        "lookDeg": -135,
+        "focal": "24-35 mm",
+        "note": "Chéo, sống kim tự tháp ở giữa khung"
+      },
+      {
+        "n": 5,
+        "pool": "SE_corner",
+        "approx": [
+          37,
+          -38
+        ],
+        "lookDeg": 135,
+        "focal": "24-35 mm",
+        "note": "Chéo, sống kim tự tháp ở giữa khung"
+      }
+    ],
+    "expectedDebate": [
+      {
+        "id": "T1",
+        "pool": "NW_half",
+        "approx": [
+          -37,
+          38
+        ]
+      },
+      {
+        "id": "T2",
+        "pool": "SW_half",
+        "approx": [
+          -38,
+          -37
+        ]
+      }
+    ]
+  },
+  "lighting": {
+    "default": "sunset",
+    "presets": {
+      "sunset": {
+        "label": "Hoàng hôn",
+        "utc": "2026-06-21T19:15:00Z",
+        "sky": "clear",
+        "turbidity": 6,
+        "rayleigh": 2.5,
+        "sunIntensity": 2.4,
+        "ambient": 0.35,
+        "fog": 0.00012,
+        "exposure": 1.0,
+        "envIntensity": 0.7
+      },
+      "overcast": {
+        "label": "Trời mây mưa",
+        "utc": "2026-11-07T14:00:00Z",
+        "sky": "overcast",
+        "turbidity": 20,
+        "rayleigh": 0.5,
+        "sunIntensity": 0.6,
+        "ambient": 0.8,
+        "fog": 0.0009,
+        "rain": true,
+        "exposure": 0.85,
+        "envIntensity": 0.7
+      },
+      "noon": {
+        "label": "Nắng trưa",
+        "utc": "2026-06-21T12:00:00Z",
+        "sky": "clear",
+        "turbidity": 3,
+        "rayleigh": 1.2,
+        "sunIntensity": 2.0,
+        "ambient": 0.4,
+        "fog": 6e-05,
+        "exposure": 0.5,
+        "envIntensity": 0.35
+      }
+    }
+  },
+  "session": {
+    "durationMinutes": 10,
+    "reminders": [
+      6,
+      8
+    ],
+    "exportGraceSeconds": 60,
+    "previewSeconds": 30
+  },
+  "teacher": {
+    "pin": "1789"
+  },
+  "referencePhotos": [
+    {
+      "id": "sunset_high",
+      "label": "Hoàng hôn từ trên cao",
+      "preset": "sunset",
+      "pose": {
+        "pos": [
+          76.5,
+          28
+        ],
+        "height": 14.5,
+        "headingDeg": 190,
+        "pitchDeg": -12,
+        "focal": 24
+      },
+      "note": "Tư thế giả định: cửa sổ cánh Sully. Gắn ảnh thật để kiểm tra."
+    },
+    {
+      "id": "rain_high",
+      "label": "Trời mưa từ trên cao",
+      "preset": "overcast",
+      "pose": {
+        "pos": [
+          0.4,
+          80.5
+        ],
+        "height": 14.5,
+        "headingDeg": -90,
+        "pitchDeg": -22,
+        "focal": 35
+      },
+      "note": "Nhìn từ cửa sổ Richelieu xuống hồ trong N (vị trí 1 bản trên cao)."
+    },
+    {
+      "id": "pool_edge_wide",
+      "label": "Sát mép hồ góc siêu rộng",
+      "preset": "sunset",
+      "pose": {
+        "pos": [
+          37.6,
+          -0.3
+        ],
+        "height": 0.9,
+        "headingDeg": 180,
+        "pitchDeg": 4,
+        "focal": 16
+      },
+      "note": "Bố cục vị trí 2, mắt sát mặt nước."
+    }
+  ],
+  "crowd": {
+    "count": 80,
+    "speed": 0.9
+  },
+  "credits": [
+    "© OpenStreetMap contributors (ODbL)",
+    "Kim tự tháp Louvre: I. M. Pei. Dùng nội bộ lớp học, phi thương mại."
+  ]
+}
