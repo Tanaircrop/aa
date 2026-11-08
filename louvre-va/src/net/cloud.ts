@@ -55,8 +55,8 @@ export const cloud = {
       await rpc('lva_photo', { id: rec.id, device_id: deviceId(), group_name: rec.group, path, meta: rec.meta, strokes: rec.strokes, note: rec.note, created_at: new Date(rec.createdAt).toISOString() });
     } catch { /* ignore */ }
   },
-  async result(r: { group: string; points: number; discovered: number; eggs: string[]; photos: number; annotated: number; answer: number | null; correct: boolean | null }) {
+  async result(r: { group: string; points: number; discovered: number; eggs: string[]; photos: number; annotated: number; answer: number | null; correct: boolean | null; hintUsed: boolean }) {
     if (!this.enabled) return;
-    await rpc('lva_result', { device_id: deviceId(), group_name: r.group, points: r.points, discovered: r.discovered, eggs: r.eggs, photos: r.photos, annotated: r.annotated, answer: r.answer, answer_correct: r.correct, finished_at: new Date().toISOString() });
+    await rpc('lva_result', { device_id: deviceId(), group_name: r.group, points: r.points, discovered: r.discovered, eggs: r.eggs, photos: r.photos, annotated: r.annotated, answer: r.answer, answer_correct: r.correct, hint_used: r.hintUsed, finished_at: new Date().toISOString() });
   },
 };

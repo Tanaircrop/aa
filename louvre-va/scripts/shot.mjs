@@ -13,6 +13,7 @@ await page.goto('http://localhost:4175/' + (process.env.QS || ''));
 await page.waitForSelector('.loader', { state: 'detached', timeout: 90000 });
 if (process.env.INTRO) { await page.waitForTimeout(2500); await page.screenshot({ path: `${OUT}/intro-real.png`, timeout: 120000, fullPage: false }); console.log('shot intro-real'); }
 await page.click('text=Bỏ qua xem mẫu'); await page.fill('input[placeholder^="Tên nhóm"]', 'QA'); await page.click('text=Vào quảng trường'); await page.waitForTimeout(500); await page.evaluate(() => { document.exitPointerLock(); window.lva.player.touchLook.dx = 0; window.lva.player.touchLook.dy = 0; });
+if (process.env.NOTUT) await page.evaluate(() => { window.lva.tutorial.skip(); document.querySelectorAll('#ui .modal').forEach((m) => m.remove()); window.lva.session.beginTimer(); });
 for (const spec of (process.env.SHOTS || '').split(';').filter(Boolean)) {
   const [name, preset, rest] = spec.split(':'); const [x, y, h, alt, pitch, focal, cam] = rest.split(',').map(Number);
   await page.evaluate(({ preset, x, y, h, alt, pitch, focal, cam }) => { if (preset !== 'keep') window.lva.env.applyPreset(preset); window.lva.player.teleport([x, y], h, alt, pitch); window.lva.photo.focal = focal; window.lva.setCamera(!!cam); }, { preset, x, y, h, alt, pitch, focal, cam });

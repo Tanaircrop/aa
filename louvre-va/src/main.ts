@@ -211,7 +211,7 @@ function askFinalQuestion() {
     const correct = prog.answerQuestion(n, q.answer, q.bonus); m.remove();
     hud.setScore(prog.points, prog.discovered.size, standardTips.length);
     toast(correct ? `Đúng! Có ${q.answer} góc hội tụ đủ V + A. +${q.bonus} điểm. Tổng ⭐ ${prog.points}.` : `Chưa đúng: có ${q.answer} góc (5 mũi hồ 90° hướng vào kim tự tháp). Tổng ⭐ ${prog.points}.`, 9000);
-    await cloud.result({ group: session.group, points: prog.points, discovered: prog.discovered.size, eggs: [...prog.eggs], photos: session.photosTaken, annotated: session.photosAnnotated, answer: n, correct });
+    await cloud.result({ group: session.group, points: prog.points, discovered: prog.discovered.size, eggs: [...prog.eggs], photos: session.photosTaken, annotated: session.photosAnnotated, answer: n, correct, hintUsed: prog.hintUsed });
     galleryPanel.show();
   };
   ok.onclick = submit; input.onkeydown = (e) => { if (e.key === 'Enter') submit(); };

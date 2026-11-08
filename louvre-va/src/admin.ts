@@ -28,7 +28,7 @@ function login(msg = '') {
 }
 
 interface Device { device_id: string; group_name: string; x: number; y: number; alt: number; heading: number; mode: string; phase: string; remaining: number; photos: number; points: number; discovered: number; eggs: string[]; updated_at: string }
-interface Result { device_id: string; group_name: string; points: number; discovered: number; eggs: string[]; photos: number; annotated: number; answer: number | null; answer_correct: boolean | null; finished_at: string }
+interface Result { device_id: string; group_name: string; points: number; discovered: number; eggs: string[]; photos: number; annotated: number; answer: number | null; answer_correct: boolean | null; hint_used?: boolean; finished_at: string }
 
 function dashboard() {
   root.innerHTML = '';
@@ -82,7 +82,7 @@ function dashboard() {
   const renderTable = () => {
     table.innerHTML = '';
     const t = el('table', { class: 'keys' });
-    t.append(el('tr', { html: '<td><b>Nhóm</b></td><td><b>Trạng thái</b></td><td><b>Còn</b></td><td><b>Ảnh</b></td><td><b>Điểm</b></td><td><b>Góc</b></td><td><b>Egg</b></td><td><b>Câu hỏi</b></td>' }));
+    t.append(el('tr', { html: '<td><b>Nhóm</b></td><td><b>Trạng thái</b></td><td><b>Còn</b></td><td><b>Ảnh</b></td><td><b>Điểm</b></td><td><b>Góc</b></td><td><b>Egg</b></td><td><b>Câu hỏi</b></td><td><b>Gợi ý</b></td>' }));
     const byDevice = new Map(res.map((r) => [r.device_id, r]));
     const rows = [...devices];
     for (const r of res) if (!rows.find((d) => d.device_id === r.device_id)) rows.push({ device_id: r.device_id, group_name: r.group_name, x: 0, y: 0, alt: 0, heading: 0, mode: 'walk', phase: 'ended', remaining: 0, photos: r.photos, points: r.points, discovered: r.discovered, eggs: r.eggs, updated_at: r.finished_at });
@@ -97,11 +97,12 @@ function dashboard() {
         el('td', {}, [`${d.photos}`]), el('td', {}, [`⭐ ${r?.points ?? d.points}`]), el('td', {}, [`${r?.discovered ?? d.discovered}/5`]),
         el('td', {}, [(r?.eggs ?? d.eggs ?? []).join(' ') || '—']),
         el('td', {}, [r?.answer == null ? '—' : `${r.answer} ${r.answer_correct ? '✓' : '✗'}`]),
+        el('td', {}, [r ? (r.hint_used ? 'đã dùng' : 'không') : '—']),
       ]);
       tr.onclick = () => showPhotos(d);
       t.append(tr);
     }
-    if (!rows.length) t.append(el('tr', { html: '<td colspan="8" class="muted">Chưa có thiết bị nào trong 6 giờ qua.</td>' }));
+    if (!rows.length) t.append(el('tr', { html: '<td colspan="9" class="muted">Chưa có thiết bị nào trong 6 giờ qua.</td>' }));
     table.append(t);
   };
   const showPhotos = async (d: Device) => {
