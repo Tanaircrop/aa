@@ -40,8 +40,14 @@ export function readComposition(player: Player, photo: PhotoCamera, camera: THRE
   out.hasA = inFrame(apex) && cornersIn >= 2;
   out.apexUpper = inFrame(apex) && apex.y < r.y + r.h * 0.4;
   // V
-  let best: PoolTip | null = null; let bestD = 7;
-  for (const t of tips) { const d = Math.hypot(player.pos[0] - t.pos[0], player.pos[1] - t.pos[1]); if (d < bestD) { bestD = d; best = t; } }
+  // candidate tips within reach; pick the one the player is actually looking along (distance + heading mismatch)
+  let best: PoolTip | null = null; let bestD = 0; let bestScore = Infinity;
+  for (const t of tips) {
+    const d = Math.hypot(player.pos[0] - t.pos[0], player.pos[1] - t.pos[1]); if (d > 7) continue;
+    const diff = Math.abs((((player.headingDeg - t.bisectorDeg) % 360) + 540) % 360 - 180);
+    const score = d + diff / 12;
+    if (score < bestScore) { bestScore = score; best = t; bestD = d; }
+  }
   if (best) {
     out.tip = best;
     const diff = Math.abs((((player.headingDeg - best.bisectorDeg) % 360) + 540) % 360 - 180);
