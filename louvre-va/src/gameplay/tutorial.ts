@@ -17,6 +17,7 @@ export class Tutorial {
   private ring: THREE.Mesh;
   private beam: THREE.Mesh;
   onMessage: ((title: string, body: string, progress: string) => void) | null = null;
+  onDone: (() => void) | null = null;
   private lastHint = 0;
   private shownTips = new Set<string>();
   /** the standard corner the tutorial teaches on (position 1, north inner pool) and where to stand */
@@ -79,7 +80,7 @@ export class Tutorial {
         break;
       case 'annotate':
         this.say('Vẽ chữ A và V', 'Mở Thư viện (G hoặc nút 🖼), bấm ảnh, kéo một đường thẳng dọc sống kim tự tháp (A), hai nét đứt theo bờ hồ (V), chấm đỏ ở đỉnh V, ghi 1 câu rồi Lưu.', 6);
-        if (annotated > 0) { this.step = 'done'; this.onMessage?.('Xong hướng dẫn', 'Còn 4 góc V + A nữa quanh hồ. Hồ có 21 mũi nhưng chỉ vài mũi cho đáy kim tự tháp nằm trọn trong lòng V. Đi quanh, giơ máy, nhìn huy hiệu A và V.', ''); setTimeout(() => this.onMessage?.('', '', ''), 9000); }
+        if (annotated > 0) { this.step = 'done'; this.onMessage?.('', '', ''); this.onDone?.(); }
         break;
       default:
         break;

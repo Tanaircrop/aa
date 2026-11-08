@@ -18,6 +18,9 @@ import { Tutorial } from './gameplay/tutorial';
 import { classifyTips } from './gameplay/answers';
 import { readComposition, type Composition } from './gameplay/composition';
 import { Progress } from './gameplay/score';
+import { buildEggs, eggsInFrame } from './scene/eggs';
+import { cloud } from './net/cloud';
+import { deviceId } from './gameplay/gallery';
 import { pools } from './data/config';
 import { Hud } from './ui/hud';
 import { Minimap } from './ui/minimap';
@@ -59,7 +62,11 @@ const standardTips = allTips.filter((t) => t.cls === 'standard');
 let prog = new Progress('');
 const bonusGiven = new Set<string>();
 let comp: Composition = { hasA: false, hasV: false, tip: null, apexUpper: false, level: true };
+let eggsNow: string[] = [];
+const eggDefs = config.easterEggs as unknown as { id: string; label: string; bonus: number; pos: [number, number] }[];
 let frame = 0;
+let lastPresence = -10;
+void deviceId();
 
 const player = new Player(input, collision);
 player.flyEnabled = tSettings.flyEnabled;
@@ -103,10 +110,13 @@ async function shoot() {
   vf.doFlash(); shutterSound();
   const shotComp = comp;
   const { canvas: c, meta } = photo.capture(player, session.group, env.presetId);
-  const sc = prog.scoreShot(shotComp, standardTips.length);
+  const sc = prog.scoreShot(shotComp, standardTips.length, eggDefs.filter((e) => eggsNow.includes(e.id)));
   meta.hasA = shotComp.hasA; meta.hasV = shotComp.hasV; meta.stars = sc.stars; meta.points = sc.points;
+  (meta as unknown as { eggs?: string[] }).eggs = [...eggsNow];
   const blob = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), 'image/png'));
-  await gallery.add({ id: uid(), group: session.group, blob, meta, strokes: [], note: '', createdAt: Date.now() });
+  const rec = { id: uid(), group: session.group, blob, meta, strokes: [], note: '', createdAt: Date.now() };
+  await gallery.add(rec);
+  void cloud.photo(rec, c);
   await refreshCounts();
   hud.setScore(prog.points, prog.discovered.size, standardTips.length);
   const stars = '★'.repeat(sc.stars) + '☆'.repeat(3 - sc.stars);
@@ -127,7 +137,7 @@ vf.onShutter = () => shoot();
 galleryPanel.onChange = () => refreshCounts();
 galleryPanel.annot.onSaved = (rec) => {
   if (rec.strokes.length && rec.note && !bonusGiven.has(rec.id)) { bonusGiven.add(rec.id); prog.addAnnotationBonus(); hud.setScore(prog.points, prog.discovered.size, standardTips.length); toast('Đã vẽ và ghi chú +15', 2000); }
-  galleryPanel.refresh(); refreshCounts();
+  galleryPanel.refresh(); refreshCounts(); void cloud.annotation(rec);
 };
 hud.btnGallery.onclick = () => { releaseForUi(); menu.hide(); teacherPanel?.hide(); galleryPanel.toggle(); };
 hud.btnMenu.onclick = () => { releaseForUi(); galleryPanel.hide(); teacherPanel?.hide(); menu.toggle(); };
@@ -160,20 +170,61 @@ if (isTouch) {
 }
 session.onReminder = (m) => toast(m, 5000);
 tutorial.onMessage = (t, b, p) => hud.setTutorial(t, b, p);
-hud.tutorialSkip.onclick = () => { tutorial.skip(); localStorage.setItem('lva.tutorialDone', '1'); };
+hud.tutorialSkip.onclick = () => { tutorial.skip(); localStorage.setItem('lva.tutorialDone', '1'); session.beginTimer(); toast(`Bỏ qua hướng dẫn. ${session.format(session.durationSec)} bắt đầu!`, 3000); };
+tutorial.onDone = () => {
+  localStorage.setItem('lva.tutorialDone', '1'); releaseForUi();
+  const start = el('button', { class: 'primary' }, [`Bắt đầu ${config.session.durationMinutes} phút`]);
+  const m = el('div', { class: 'modal' }, [el('div', { class: 'panel', style: 'max-width:520px' }, [
+    el('h1', {}, ['Hướng dẫn kết thúc']),
+    el('p', {}, ['Bạn đã làm quen đủ thao tác: đi lại, giơ máy, zoom, canh khung theo huy hiệu A và V, chụp, vẽ và ghi chú.']),
+    el('p', {}, [`Giờ là bài thật: còn ${standardTips.length - 1} góc V + A nữa quanh hồ, 2 Easter egg chữ X và chữ C, và câu hỏi cuối bài. Đồng hồ ${config.session.durationMinutes} phút bắt đầu khi bấm nút.`]),
+    el('p', { class: 'muted' }, ['Gợi ý 1 lần sẽ mở sau 5 phút nếu bạn cần.']),
+    start,
+  ])]);
+  ui().append(m);
+  start.onclick = () => { m.remove(); session.beginTimer(); toast(`${session.format(session.durationSec)} bắt đầu. Tìm V + A!`, 3500); if (!isTouch) canvas.requestPointerLock?.(); };
+};
+// one-shot hint: teleport to the known V + A corner with the camera already framed; just press the shutter
+hud.btnHint.onclick = () => {
+  if (prog.hintUsed) return;
+  prog.useHint(); hud.btnHint.classList.add('hidden');
+  player.teleport(tutorial.checkpoint, tutorial.headingDeg, 0.8, -4); photo.focal = 16; setCamera(true);
+  toast('Gợi ý: đây là một góc V + A chuẩn, máy đã canh sẵn. Bấm chụp!', 5000);
+};
 // block the browser's pinch / double-tap zoom on touch devices (iOS ignores user-scalable=no)
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('contextmenu', (e) => { if (isTouch) e.preventDefault(); });
+function askFinalQuestion() {
+  releaseForUi(); setCamera(false);
+  const q = config.finalQuestion;
+  const input = el('input', { type: 'number', min: '0', max: '21', placeholder: 'Số góc' }); const ok = el('button', { class: 'primary' }, ['Trả lời']);
+  const m = el('div', { class: 'modal' }, [el('div', { class: 'panel', style: 'max-width:520px' }, [
+    el('h1', {}, ['Hết giờ! Câu hỏi cuối']),
+    el('p', {}, [q.text]),
+    el('p', { class: 'muted' }, [`Nhóm bạn đã khám phá ${prog.discovered.size} góc, ${session.photosTaken} ảnh, ⭐ ${prog.points} điểm. Trả lời đúng +${q.bonus}.`]),
+    el('div', { class: 'row' }, [input, ok]),
+  ])]);
+  ui().append(m); setTimeout(() => input.focus(), 50);
+  const submit = async () => {
+    const n = parseInt(input.value); if (isNaN(n)) return;
+    const correct = prog.answerQuestion(n, q.answer, q.bonus); m.remove();
+    hud.setScore(prog.points, prog.discovered.size, standardTips.length);
+    toast(correct ? `Đúng! Có ${q.answer} góc hội tụ đủ V + A. +${q.bonus} điểm. Tổng ⭐ ${prog.points}.` : `Chưa đúng: có ${q.answer} góc (5 mũi hồ 90° hướng vào kim tự tháp). Tổng ⭐ ${prog.points}.`, 9000);
+    await cloud.result({ group: session.group, points: prog.points, discovered: prog.discovered.size, eggs: [...prog.eggs], photos: session.photosTaken, annotated: session.photosAnnotated, answer: n, correct });
+    galleryPanel.show();
+  };
+  ok.onclick = submit; input.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+}
 session.onPhase = (p) => {
-  if (p === 'grace') toast(`Hết giờ! ⭐ ${prog.points} điểm · ${prog.discovered.size}/${standardTips.length} góc V+A · ${session.photosTaken} ảnh. Còn 1 phút để xuất bài.`, 8000);
+  if (p === 'grace') { toast(`Hết giờ! Còn 1 phút để xuất bài.`, 4000); askFinalQuestion(); }
   if (p === 'ended') { galleryPanel.show(); toast('Kết thúc bài. Xuất trang tổng hợp để nộp.', 6000); }
 };
 
 // --- deferred building (keeps first paint fast)
 const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res) => setTimeout(() => { progress(p, msg); fn(); res(); }, 30));
 (async () => {
-  await later(() => buildFacades(engine.scene, collision, settings.facadeDetail), 'Mặt tiền Richelieu, Sully, Denon…', 0.45);
+  await later(() => { buildFacades(engine.scene, collision, settings.facadeDetail); buildEggs(engine.scene, collision); }, 'Mặt tiền Richelieu, Sully, Denon…', 0.45);
   await later(() => buildBackground(engine.scene), 'Tuileries, tháp Eiffel, vòng quay…', 0.7);
   await later(() => {
     crowd = new Crowd(engine.scene, collision, settings.crowd, config.crowd.speed);
@@ -189,9 +240,9 @@ const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res
     teacher,
     onPreview: () => { session.phase = 'preview'; },
     onStart: (group) => {
-      session.start(group); gameStarted = true; refreshCounts();
+      session.start(group, tutorial.active); gameStarted = true; refreshCounts();
       prog = new Progress(group); hud.setScore(prog.points, prog.discovered.size, standardTips.length);
-      toast(`Nhóm ${group}: ${session.format(session.durationSec)} bắt đầu. Tìm V + A!`, 4000);
+      toast(tutorial.active ? `Nhóm ${group}: làm quen thao tác trước, chưa tính giờ.` : `Nhóm ${group}: ${session.format(session.durationSec)} bắt đầu. Tìm V + A!`, 4000);
       if (!isTouch) canvas.requestPointerLock?.();
     },
   });
@@ -224,6 +275,10 @@ engine.onUpdate((dt, t) => {
   session.update(dt);
   comp = readComposition(player, photo, engine.camera, canvas.clientWidth, canvas.clientHeight, allTips, plaza.pyramidCenter);
   vf.badges.a = comp.hasA; vf.badges.v = comp.hasV; vf.badges.both = comp.hasA && comp.hasV;
+  eggsNow = photo.on ? eggsInFrame(engine.camera, player.pos, photo.frameRect(canvas.clientWidth, canvas.clientHeight), canvas.clientWidth, canvas.clientHeight) : [];
+  vf.badges.eggs = eggsNow;
+  hud.btnHint.classList.toggle('hidden', !(gameStarted && session.phase === 'playing' && !prog.hintUsed && session.elapsed >= config.session.hintAfterSeconds));
+  if (gameStarted && t - lastPresence > 4) { lastPresence = t; void cloud.presence({ group: session.group, x: player.pos[0], y: player.pos[1], alt: player.alt, heading: player.headingDeg, mode: player.mode, phase: session.phase, remaining: session.remaining, photos: session.photosTaken, points: prog.points, discovered: prog.discovered.size, eggs: [...prog.eggs] }); }
   if (gameStarted) tutorial.update(dt, t, player, photo.on, photo.focal, comp.hasA, comp.hasV, session.photosTaken, session.photosAnnotated);
   // hot / cold rescue: after 4 minutes with fewer than 2 corners found, point toward the nearest undiscovered corner
   if (gameStarted && session.phase === 'playing' && !tutorial.active && session.durationSec - session.remaining > 240 && prog.discovered.size < 2) {

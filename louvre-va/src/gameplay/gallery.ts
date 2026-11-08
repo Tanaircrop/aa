@@ -68,3 +68,10 @@ export const gallery = {
 };
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+/** Stable per-browser id: photos and results of one device never mix with another device's, even with the same group name. */
+export function deviceId(): string {
+  let id = localStorage.getItem('lva.device');
+  if (!id) { id = 'd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0, 12) : uid()); localStorage.setItem('lva.device', id); }
+  return id;
+}

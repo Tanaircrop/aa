@@ -1,6 +1,6 @@
 import { config } from '../data/config';
 
-export type SessionPhase = 'intro' | 'preview' | 'playing' | 'grace' | 'ended';
+export type SessionPhase = 'intro' | 'preview' | 'tutorial' | 'playing' | 'grace' | 'ended';
 
 export interface TeacherSettings { durationMinutes: number; crowd: boolean; flyEnabled: boolean; preset: string; overlay: boolean }
 
@@ -25,10 +25,14 @@ export class Session {
 
   constructor(durationMinutes: number) { this.durationSec = durationMinutes * 60; }
 
-  start(group: string) {
-    this.group = group; this.phase = 'playing'; this.remaining = this.durationSec; this.fired.clear();
+  /** Enter the plaza. With `tutorial` the clock waits until beginTimer() is called. */
+  start(group: string, tutorial = false) {
+    this.group = group; this.remaining = this.durationSec; this.fired.clear();
+    this.phase = tutorial ? 'tutorial' : 'playing';
     this.onPhase?.(this.phase);
   }
+  beginTimer() { if (this.phase === 'tutorial') { this.phase = 'playing'; this.remaining = this.durationSec; this.onPhase?.(this.phase); } }
+  get elapsed(): number { return this.phase === 'playing' || this.phase === 'grace' || this.phase === 'ended' ? this.durationSec - this.remaining : 0; }
 
   get captureLocked(): boolean { return this.phase === 'grace' || this.phase === 'ended'; }
 

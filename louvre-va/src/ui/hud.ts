@@ -4,7 +4,7 @@ import type { Player } from '../gameplay/player';
 
 export class Hud {
   root: HTMLElement; timer: HTMLElement; group: HTMLElement; tasks: HTMLElement; mode: HTMLElement; hints: HTMLElement; fps: HTMLElement; score: HTMLElement; heat: HTMLElement;
-  btnMenu: HTMLButtonElement; btnGallery: HTMLButtonElement; btnTeacher: HTMLButtonElement; btnFull: HTMLButtonElement; tutorial: HTMLElement; tutorialSkip: HTMLButtonElement;
+  btnMenu: HTMLButtonElement; btnGallery: HTMLButtonElement; btnTeacher: HTMLButtonElement; btnFull: HTMLButtonElement; btnHint: HTMLButtonElement; tutorial: HTMLElement; tutorialSkip: HTMLButtonElement;
   constructor(isTouch: boolean) {
     this.group = el('span', { class: 'chip' }, ['Nhóm: ', el('b', {}, ['—'])]);
     this.timer = el('span', { class: 'chip', id: 'timer' }, ['10:00']);
@@ -15,6 +15,7 @@ export class Hud {
     this.btnMenu = el('button', {}, ['☰ Menu']);
     this.btnGallery = el('button', {}, ['🖼 Thư viện']);
     this.btnTeacher = el('button', { class: 'hidden' }, ['🎓 Giảng viên']);
+    this.btnHint = el('button', { class: 'hidden primary' }, ['💡 Gợi ý (1 lần)']);
     this.btnFull = el('button', { title: 'Toàn màn hình' }, ['⛶']);
     this.btnFull.onclick = () => {
       const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void };
@@ -27,7 +28,7 @@ export class Hud {
     this.tutorialSkip = el('button', { class: 't-skip' }, ['Bỏ qua']);
     this.tutorial = el('div', { id: 'tutorial', class: 'panel hidden' }, [el('div', { class: 't-head' }, [el('b', {}, ['']), el('span', { class: 'muted t-prog' }, ['']), this.tutorialSkip]), el('div', { class: 't-body' }, [''])]);
     const left = el('div', { id: 'hud-left' }, [el('div', { class: 'row' }, [this.group, this.timer]), el('div', { class: 'row' }, [this.tasks, this.mode]), el('div', { class: 'row' }, [this.score, this.heat])]);
-    const right = el('div', { class: 'row' }, [this.btnTeacher, this.btnGallery, this.btnMenu, ...(isTouch ? [this.btnFull] : [])]);
+    const right = el('div', { class: 'row' }, [this.btnHint, this.btnTeacher, this.btnGallery, this.btnMenu, ...(isTouch ? [this.btnFull] : [])]);
     this.root = el('div', { id: 'hud-top' }, [left, right]);
     this.hints = el('div', { id: 'hints', html: isTouch ? '' : '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>F</kbd> bay · <kbd>E/Q</kbd> nâng/hạ máy · <kbd>C</kbd> hoặc chuột phải: máy ảnh · <kbd>Space</kbd> chụp · con lăn hoặc <kbd>1</kbd>-<kbd>5</kbd>: zoom · <kbd>T</kbd> tỷ lệ · <kbd>L</kbd> lưới · <kbd>M</kbd> bản đồ · <kbd>Esc</kbd> menu' });
     this.fps = el('div', { id: 'fps' });
@@ -48,6 +49,7 @@ export class Hud {
     this.group.querySelector('b')!.textContent = session.group || '—';
     if (session.phase === 'grace') { this.timer.textContent = `Xuất bài: ${session.format(session.graceRemaining)}`; this.timer.className = 'chip over'; }
     else if (session.phase === 'ended') { this.timer.textContent = 'Kết thúc'; this.timer.className = 'chip over'; }
+    else if (session.phase === 'tutorial') { this.timer.textContent = 'Hướng dẫn · chưa tính giờ'; this.timer.className = 'chip'; }
     else { this.timer.textContent = session.format(session.remaining); this.timer.className = 'chip' + (session.remaining < 120 ? ' warn' : ''); }
     this.tasks.textContent = `📷 ${session.photosTaken} chụp · ✎ ${session.photosAnnotated} vẽ`;
     this.mode.textContent = player.mode === 'fly' ? `🚁 Bay · ${player.alt.toFixed(1)} m · ${player.flySpeed.toFixed(0)} m/s` : `🚶 Đi bộ · máy ${player.cameraHeight.toFixed(2)} m`;

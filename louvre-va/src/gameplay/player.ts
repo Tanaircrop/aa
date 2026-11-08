@@ -76,7 +76,8 @@ export class Player {
     if (inp.down('KeyA') || inp.down('ArrowLeft')) r -= 1;
     f += -inp.joy.y; r += inp.joy.x;
     const len = Math.hypot(f, r); if (len > 1) { f /= len; r /= len; }
-    const boost = inp.down('ShiftLeft') || inp.down('ShiftRight') || inp.touch.boost;
+    const joyMag = Math.hypot(inp.joy.x, inp.joy.y);
+    const boost = inp.down('ShiftLeft') || inp.down('ShiftRight') || inp.touch.boost || joyMag > 0.92;
     const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
     const fwd: Vec2 = [cy, sy]; const right: Vec2 = [sy, -cy];
     let up = 0;
@@ -84,7 +85,8 @@ export class Player {
     if (inp.down('KeyQ') || inp.touch.down) up -= 1;
 
     if (this.mode === 'walk') {
-      const speed = boost ? P.runSpeed : P.walkSpeed;
+      const touch = joyMag > 0.05;
+      const speed = boost ? (touch ? P.touchRunSpeed : P.runSpeed) : (touch ? P.touchWalkSpeed : P.walkSpeed);
       const nx = this.pos[0] + (fwd[0] * f + right[0] * r) * speed * dt;
       const ny = this.pos[1] + (fwd[1] * f + right[1] * r) * speed * dt;
       this.pos = this.collision.resolveWalk([nx, ny], P.radius);

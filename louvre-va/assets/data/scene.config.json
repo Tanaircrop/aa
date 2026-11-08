@@ -421,7 +421,9 @@
     "cameraHeightMax": 2.0,
     "flySpeedMin": 1,
     "flySpeedMax": 15,
-    "flySpeedDefault": 5
+    "flySpeedDefault": 5,
+    "touchWalkSpeed": 2.2,
+    "touchRunSpeed": 5.0
   },
   "spawn": {
     "pos": [
@@ -837,13 +839,14 @@
     }
   },
   "session": {
-    "durationMinutes": 10,
+    "durationMinutes": 15,
     "reminders": [
-      6,
-      8
+      9,
+      12
     ],
     "exportGraceSeconds": 60,
-    "previewSeconds": 30
+    "previewSeconds": 30,
+    "hintAfterSeconds": 300
   },
   "teacher": {
     "pin": "1789"
@@ -944,5 +947,36 @@
     "headingDeg": 0,
     "radius": 2.5,
     "hintRadius": 4.0
+  },
+  "easterEggs": [
+    {
+      "id": "X",
+      "label": "Chữ X: giàn giáo trùng tu (croix de Saint-André)",
+      "pos": [
+        -120,
+        70
+      ],
+      "height": 6,
+      "radius": 22,
+      "bonus": 40,
+      "hint": "Cánh Richelieu phía tây đang trùng tu, hai thanh chéo gỗ bắt chữ X."
+    },
+    {
+      "id": "C",
+      "label": "Chữ C: cổng Métro Art Nouveau (Guimard)",
+      "pos": [
+        -126,
+        -52
+      ],
+      "height": 3.5,
+      "radius": 18,
+      "bonus": 40,
+      "hint": "Lối xuống Métro Palais Royal, tay sắt uốn cong hình chữ C."
+    }
+  ],
+  "finalQuestion": {
+    "text": "Trong quảng trường này có bao nhiêu góc hội tụ đầy đủ cả chữ V và chữ A?",
+    "answer": 5,
+    "bonus": 100
   }
 }

@@ -15,7 +15,7 @@ export class Viewfinder {
   root: HTMLElement; canvas: HTMLCanvasElement; readout: HTMLElement; controls: HTMLElement; flash: HTMLElement;
   onShutter: (() => void) | null = null;
   private t = 0; // 0 = lowered, 1 = raised
-  badges = { a: false, v: false, both: false };
+  badges = { a: false, v: false, both: false, eggs: [] as string[] };
   private badgePulse = 0;
   private bob = 0;
   constructor(private cam: PhotoCamera, private isTouch: boolean) {
@@ -158,6 +158,11 @@ export class Viewfinder {
       ctx.restore();
     };
     badge(bx, 'V', this.badges.v); badge(bx - bw - 6, 'A', this.badges.a);
+    this.badges.eggs.forEach((id, i) => {
+      ctx.save(); ctx.globalAlpha = a; const x = bx + 6 + (i + 1) * (bw + 6);
+      ctx.fillStyle = `rgba(255,210,63,${0.75 + Math.sin(this.badgePulse * 1.5) * 0.2})`; ctx.beginPath(); ctx.roundRect(x - bw, by, bw, bh, 7); ctx.fill();
+      ctx.fillStyle = '#2a2000'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(id, x - bw / 2, by + bh / 2 + 1); ctx.restore();
+    });
     if (this.badges.both) { ctx.fillStyle = '#35d07f'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('V + A  chụp đi!', r.x + 10, by + bh + 18); }
     ctx.restore();
     this.readout.innerHTML = '';

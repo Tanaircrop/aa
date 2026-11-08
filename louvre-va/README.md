@@ -42,12 +42,28 @@ Hệ toạ độ: mặt bằng `x` hướng đông (Sully), `y` hướng bắc (
 
 Lần đầu vào, một vòng tròn vàng ở mũi hồ trong phía bắc (vị trí 1, một góc V + A thật) là **checkpoint**. Đi tới đó, nét xanh hiện ngay trong cảnh 3D: hai bờ hồ (V) và hai sống kim tự tháp (A). Game dẫn qua 6 bước có kiểm tra điều kiện thật: giơ máy, chọn 16 mm, canh cho hai huy hiệu **A** và **V** trên khung ngắm cùng sáng, chụp, mở thư viện, vẽ A và V. Sau đó còn 4 góc để tự tìm; chỉ gợi ý nhỏ khi đứng gần mũi hồ 90°. "Bỏ qua" tắt hướng dẫn (lưu trong trình duyệt).
 
+## Bảng điều khiển giảng viên (server)
+
+- Link: `/admin.html` trên cùng domain (ví dụ https://louvre-va-photo-game.vercel.app/admin.html). Nhập mã admin (giữ riêng, xem tin nhắn bàn giao hoặc bảng `lva_settings` trong Supabase).
+- Hiện: bản đồ trực tiếp vị trí mọi thiết bị (3 giây/lần), trạng thái, thời gian còn lại, điểm, góc V+A, Easter egg, câu trả lời cuối; bấm nhóm để xem ảnh (kèm nét vẽ, ghi chú); nút xoá bảng cho lớp mới.
+- Backend: Supabase project `an-fine-fabrics` (bảng `lva_devices`, `lva_photos`, `lva_results`, `lva_settings`, bucket riêng `lva-photos`). Thiết bị chỉ ghi qua 3 hàm `lva_presence`, `lva_photo`, `lva_result` (SECURITY DEFINER) và upload vào bucket; không đọc được gì bằng key công khai. Dashboard đọc qua edge function `lva-admin` với header `x-admin-token`.
+- Mỗi thiết bị có `device_id` riêng (localStorage) nên ảnh và kết quả của hai nhóm trùng tên trên hai máy không lẫn nhau. Ảnh gửi lên server là JPEG 1200 px; bản gốc 1800 px vẫn ở trình duyệt.
+
+## Luồng bài 15 phút
+
+1. Màn hình vào: ảnh thật từ cửa sổ Sully với A, V, chấm đỏ tự vẽ; 2 ví dụ Easter egg X và C.
+2. Vào sân: hướng dẫn 6 bước tại góc V+A thật, **chưa tính giờ**.
+3. Popup "Hướng dẫn kết thúc" rồi bấm bắt đầu 15 phút (bỏ qua hướng dẫn thì tính giờ ngay).
+4. Sau 5 phút, nút 💡 Gợi ý (1 lần): dịch chuyển tới góc V+A chuẩn, máy đã canh sẵn, chỉ việc chụp.
+5. Hết giờ: câu hỏi "có bao nhiêu góc hội tụ đủ V và A" (đáp án 5, +100), kết quả gửi server, 1 phút xuất bài.
+
 ## Lớp game
 
 - **Huy hiệu bố cục** trên khung ngắm: A sáng khi đỉnh và đáy kim tự tháp trong khung; V sáng khi đứng sát mũi hồ, nhìn theo đường phân giác, bờ hồ chụm về đáy khung. Cả hai sáng: "V + A, chụp đi!".
 - **Điểm và sao** mỗi ảnh: +10 chụp, +20 A, +20 V, +5 cân bằng, +5 đỉnh ở 1/3 trên, +30 V + A ở góc chuẩn, +50 lần đầu khám phá góc đó, +15 góc tranh luận, +15 khi vẽ xong và ghi chú. 3 sao từ 80 điểm.
 - **Khám phá** 5 góc V + A chuẩn, hiện trên HUD (`⭐ điểm · góc V+A n/5`), lưu theo tên nhóm.
 - **Nóng / lạnh**: sau 4 phút mà chưa tìm được 2 góc, HUD hiện 🔥 / 🌡 / ❄️ theo khoảng cách tới góc chưa khám phá gần nhất.
+- **Easter egg**: giàn giáo trùng tu với thanh chéo Saint-André (chữ X) ở đầu tây cánh Richelieu, cổng Métro Art Nouveau kiểu Guimard (chữ C) gần lối vào tây nam. Đưa vào khung khi chụp: huy hiệu vàng sáng, +40 mỗi cái lần đầu.
 - **Tổng kết** khi hết giờ: điểm, số góc, số ảnh; thư viện gắn nhãn V+A và sao; trang tổng hợp ghi kèm.
 
 Màn hình vào có animation vẽ A, V, chấm đỏ lặp lại để học viên hiểu quy ước trước khi chơi.

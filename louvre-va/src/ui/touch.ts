@@ -10,7 +10,7 @@ export class TouchControls {
     const joy = el('div', { id: 'joy' }, [el('div', { class: 'knob' })]);
     const look = el('div', { id: 'look' });
     this.btnFly = el('button', {}, ['BAY']); this.btnCam = el('button', {}, ['📷']); this.btnShot = el('button', { class: 'big hidden' }, ['']);
-    this.btnMap = el('button', {}, ['MAP']); this.btnBoost = el('button', {}, ['⚡']); this.btnUp = el('button', { class: 'hidden' }, ['▲']); this.btnDown = el('button', { class: 'hidden' }, ['▼']);
+    this.btnMap = el('button', {}, ['MAP']); this.btnBoost = el('button', {}, ['Chạy']); this.btnUp = el('button', { class: 'hidden' }, ['▲']); this.btnDown = el('button', { class: 'hidden' }, ['▼']);
     this.heightInput = el('input', { type: 'range', min: `${config.player.cameraHeightMin}`, max: `${config.player.cameraHeightMax}`, step: '0.05', value: `${config.player.eyeHeight}` });
     this.height = el('div', { id: 'height-slider' }, [el('span', {}, ['2.0']), this.heightInput, el('span', {}, ['0.3'])]);
     const right = el('div', { id: 'touch-right' }, [this.btnMap, this.btnFly, this.btnUp, this.btnDown, this.btnBoost, this.btnCam, this.btnShot]);
@@ -39,7 +39,9 @@ export class TouchControls {
     const lend = (e: PointerEvent) => { pts.delete(e.pointerId); if (e.pointerId === lid) lid = -1; if (pts.size === 1) { const [id, p] = [...pts.entries()][0]; lid = id; lx = p[0]; ly = p[1]; } };
     look.addEventListener('pointerup', lend); look.addEventListener('pointercancel', lend);
     const hold = (b: HTMLButtonElement, key: keyof typeof input.touch) => { b.addEventListener('pointerdown', (e) => { e.preventDefault(); input.touch[key] = true; b.classList.add('on'); }); const off = () => { input.touch[key] = false; b.classList.remove('on'); }; b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off); };
-    hold(this.btnBoost, 'boost'); hold(this.btnUp, 'up'); hold(this.btnDown, 'down');
+    hold(this.btnUp, 'up'); hold(this.btnDown, 'down');
+    // sprint is a toggle on touch: one tap on, one tap off
+    this.btnBoost.onclick = () => { input.touch.boost = !input.touch.boost; this.btnBoost.classList.toggle('on', input.touch.boost); this.btnBoost.textContent = input.touch.boost ? 'Chạy ✓' : 'Chạy'; };
     this.btnFly.onclick = () => { input.touch.fly = true; };
     this.btnCam.onclick = () => this.onCamera?.();
     this.btnShot.onclick = () => this.onShutter?.();
