@@ -250,7 +250,7 @@ const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res
 
 // --- loop
 engine.onUpdate((dt, t) => {
-  const uiOpen = galleryPanel.open || menu.open || (teacherPanel?.open ?? false) || !!galleryPanel.annot.root;
+  const uiOpen = galleryPanel.open || menu.open || (teacherPanel?.open ?? false) || !!galleryPanel.annot.root || !!document.querySelector('#ui .modal');
   player.frozen = uiOpen || !gameStarted;
   if (!uiOpen) {
     if (input.justPressed('KeyC')) setCamera(!photo.on);
