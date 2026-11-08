@@ -47,7 +47,8 @@ export class PhotoCamera {
 
   /** Render the photo at full resolution and build its metadata. */
   capture(player: Player, group: string, presetId: string): { canvas: HTMLCanvasElement; meta: PhotoMeta } {
-    const long = config.camera.photoLongEdge;
+    // low-end devices render a smaller photo to stay within GPU memory
+    const long = this.engine.settings.level === 'low' ? Math.round(config.camera.photoLongEdge * 2 / 3) : config.camera.photoLongEdge;
     const w = this.aspect >= 1 ? long : Math.round(long * this.aspect);
     const h = this.aspect >= 1 ? Math.round(long / this.aspect) : long;
     const cam = this.captureCam;

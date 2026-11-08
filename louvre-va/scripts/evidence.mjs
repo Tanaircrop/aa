@@ -12,7 +12,7 @@ await new Promise((r) => setTimeout(r, 2500));
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const shots = [];
-const RUNS = (process.env.RUNS || 'desktop,teacher,mobile').split(',');
+const RUNS = (process.env.RUNS || 'desktop,capture,teacher,mobile').split(',');
 async function run(name, { mobile = false, teacher = false, steps }) {
   if (!RUNS.includes(name)) return;
   const ctx = await browser.newContext(mobile
@@ -21,7 +21,7 @@ async function run(name, { mobile = false, teacher = false, steps }) {
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.log('PAGE ERROR', name, e.message));
   page.on('console', (m) => { if (m.type() === 'error') console.log('CONSOLE', name, m.text().slice(0, 200)); });
-  await page.addInitScript(() => { localStorage.setItem('lva.quality', 'medium'); });
+  await page.addInitScript((q) => { localStorage.setItem('lva.quality', q); }, process.env.Q || 'medium');
   await page.goto(`http://localhost:${PORT}/${teacher ? '?mode=teacher&pin=1789' : ''}`);
   await page.waitForSelector('.loader', { state: 'detached', timeout: 60000 });
   await steps(page);
@@ -55,6 +55,12 @@ await run('desktop', { steps: async (page) => {
   await page.evaluate(() => { window.lva.env.applyPreset('noon'); window.lva.setCamera(false); window.lva.player.teleport([36.4, -0.3], 180, 0.5, 4); window.lva.photo.focal = 16; window.lva.setCamera(true); });
   await settle(page, 1500);
   await shot(page, '06-pool-edge-noon-16mm.png', 'Sát mép hồ E, nắng trưa, 16 mm');
+}});
+
+await run('capture', { steps: async (page) => {
+  await enter(page);
+  await page.evaluate(() => { window.lva.player.teleport([37.6, -0.3], 180, 0.9, 4); window.lva.photo.focal = 16; window.lva.setCamera(true); });
+  await settle(page, 1500);
   // take a real photo through the pipeline and open the gallery
   await page.evaluate(() => window.lva.env.applyPreset('sunset'));
   await settle(page, 800);
@@ -62,14 +68,16 @@ await run('desktop', { steps: async (page) => {
   await page.evaluate(() => document.exitPointerLock()); await settle(page, 300);
   await page.evaluate(() => window.lva.galleryPanel.show()); await settle(page, 1500);
   await shot(page, '07-gallery.png', 'Thư viện ảnh (IndexedDB) sau khi chụp');
-  await page.click('.thumbs .t', { force: true, timeout: 120000 }); await settle(page, 800);
+  await page.waitForSelector('.thumbs .t', { timeout: 180000 });
+  await page.evaluate(() => document.querySelector('.thumbs .t').dispatchEvent(new MouseEvent('click', { bubbles: true }))); await settle(page, 1500);
+  await page.waitForSelector('#annot canvas', { timeout: 120000 });
   const c = await page.$('#annot canvas'); const b = await c.boundingBox();
   await page.mouse.move(b.x + b.width * 0.3, b.y + b.height * 0.8); await page.mouse.down(); await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.3, { steps: 10 }); await page.mouse.up();
-  await page.click('text=V nét đứt', { force: true, timeout: 120000 });
+  await page.evaluate(() => [...document.querySelectorAll('#annot .tool')].find((b) => b.textContent.includes('V nét')).click());
   await page.mouse.move(b.x + b.width * 0.1, b.y + b.height * 0.95); await page.mouse.down(); await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.55, { steps: 10 }); await page.mouse.up();
   await page.fill('#annot textarea', 'Đỉnh V dẫn mắt vào chân kim tự tháp');
   await shot(page, '08-annotate.png', 'Vẽ A (liền), V (đứt) và ghi chú lên ảnh');
-  await page.click('#annot .bottom button.primary', { force: true, timeout: 120000 }); await settle(page, 800);
+  await page.evaluate(() => document.querySelector('#annot .bottom button.primary').click()); await settle(page, 800);
 }});
 
 await run('teacher', { teacher: true, steps: async (page) => {
@@ -92,5 +100,5 @@ await run('mobile', { mobile: true, steps: async (page) => {
 await browser.close();
 server.kill();
 const fs = await import('node:fs');
-if (RUNS.length === 3) fs.writeFileSync(`${OUT}/README.md`, `# QA evidence\n\nẢnh chụp tự động từ bản build (scripts/evidence.mjs), Chromium headless, mức chất lượng medium.\n\n${shots.map(([f, l]) => `- \`${f}\`: ${l}`).join('\n')}\n`);
+if (RUNS.length >= 4) fs.writeFileSync(`${OUT}/README.md`, `# QA evidence\n\nẢnh chụp tự động từ bản build (scripts/evidence.mjs), Chromium headless, mức chất lượng medium.\n\n${shots.map(([f, l]) => `- \`${f}\`: ${l}`).join('\n')}\n`);
 console.log('done');
