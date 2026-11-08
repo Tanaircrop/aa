@@ -4,6 +4,34 @@ import { classifyTips, summarize, orderStandard, poseForTip, type PoolTip } from
 
 export interface AnswerEntry { key: string; label: string; tip?: PoolTip; pose: { pos: Vec2; headingDeg: number; alt?: number; pitchDeg?: number }; kind: 'standard' | 'debate'; note: string; focal: number }
 
+/** V (two pool edges) and A (two pyramid ridges facing the tip) drawn as glowing tubes for one pool tip. */
+export function buildTipGuide(tip: PoolTip, color: number, label: string, opts: { thick?: number; pole?: boolean } = {}): THREE.Group {
+  const g = new THREE.Group();
+  const c = config.mainPyramid.corners as Vec2[]; const H = config.mainPyramid.height;
+  const cx = c.reduce((a, p) => a + p[0], 0) / 4, cy = c.reduce((a, p) => a + p[1], 0) / 4;
+  const [px, pz] = toThree([cx, cy]); const apex = new THREE.Vector3(px, H, pz);
+  const pool = pools.find((p) => p.id === tip.pool)!; const n = pool.pts.length;
+  const a = pool.pts[(tip.index + 1) % n], b = pool.pts[(tip.index + n - 1) % n];
+  const y = config.poolRimHeight + 0.15; const thick = opts.thick ?? 0.12;
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthTest: false });
+  for (const q of [a, b]) {
+    const [x1, z1] = toThree(tip.pos), [x2, z2] = toThree(q);
+    const path = new THREE.LineCurve3(new THREE.Vector3(x1, y, z1), new THREE.Vector3(x2, y, z2));
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(path, 1, thick, 6), mat); tube.renderOrder = 40; g.add(tube);
+  }
+  const [tx, tz] = toThree(tip.pos);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(opts.pole === false ? 0.18 : 0.35, 12, 8), mat); dot.position.set(tx, y + 0.1, tz); dot.renderOrder = 40; g.add(dot);
+  if (opts.pole !== false) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), mat); pole.position.set(tx, y + 2, tz); g.add(pole); }
+  if (label) g.add(makeLabel(label, color, new THREE.Vector3(tx, y + (opts.pole === false ? 1.2 : 4.4), tz)));
+  const near = [...c].sort((p, q) => Math.hypot(p[0] - tip.pos[0], p[1] - tip.pos[1]) - Math.hypot(q[0] - tip.pos[0], q[1] - tip.pos[1]));
+  for (const corner of near.slice(0, 2)) {
+    const [kx, kz] = toThree(corner);
+    const path = new THREE.LineCurve3(new THREE.Vector3(kx, 0.2, kz), apex.clone());
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(path, 1, thick * 0.9, 6), mat); tube.renderOrder = 40; g.add(tube);
+  }
+  return g;
+}
+
 /** Teacher overlay: green V/A/dot for the 5 standard positions, yellow for T1, T2 and the perspective V toward the Arc. */
 export class AnswerOverlay {
   group = new THREE.Group();

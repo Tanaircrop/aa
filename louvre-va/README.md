@@ -40,7 +40,15 @@ Hệ toạ độ: mặt bằng `x` hướng đông (Sully), `y` hướng bắc (
 
 ## Hướng dẫn trong game
 
-Lần đầu vào, một vòng tròn vàng trên sân là **checkpoint**: đi tới đó, game dẫn qua 6 bước (giơ máy, chọn 24 mm, đặt đỉnh kim tự tháp vào 1/3 trên, chụp, mở thư viện, kéo đường A). Sau đó chỉ còn gợi ý nhỏ khi đứng gần mũi hồ 90°, không lộ đáp án. "Bỏ qua" tắt hướng dẫn (lưu trong trình duyệt).
+Lần đầu vào, một vòng tròn vàng ở mũi hồ trong phía bắc (vị trí 1, một góc V + A thật) là **checkpoint**. Đi tới đó, nét xanh hiện ngay trong cảnh 3D: hai bờ hồ (V) và hai sống kim tự tháp (A). Game dẫn qua 6 bước có kiểm tra điều kiện thật: giơ máy, chọn 16 mm, canh cho hai huy hiệu **A** và **V** trên khung ngắm cùng sáng, chụp, mở thư viện, vẽ A và V. Sau đó còn 4 góc để tự tìm; chỉ gợi ý nhỏ khi đứng gần mũi hồ 90°. "Bỏ qua" tắt hướng dẫn (lưu trong trình duyệt).
+
+## Lớp game
+
+- **Huy hiệu bố cục** trên khung ngắm: A sáng khi đỉnh và đáy kim tự tháp trong khung; V sáng khi đứng sát mũi hồ, nhìn theo đường phân giác, bờ hồ chụm về đáy khung. Cả hai sáng: "V + A, chụp đi!".
+- **Điểm và sao** mỗi ảnh: +10 chụp, +20 A, +20 V, +5 cân bằng, +5 đỉnh ở 1/3 trên, +30 V + A ở góc chuẩn, +50 lần đầu khám phá góc đó, +15 góc tranh luận, +15 khi vẽ xong và ghi chú. 3 sao từ 80 điểm.
+- **Khám phá** 5 góc V + A chuẩn, hiện trên HUD (`⭐ điểm · góc V+A n/5`), lưu theo tên nhóm.
+- **Nóng / lạnh**: sau 4 phút mà chưa tìm được 2 góc, HUD hiện 🔥 / 🌡 / ❄️ theo khoảng cách tới góc chưa khám phá gần nhất.
+- **Tổng kết** khi hết giờ: điểm, số góc, số ảnh; thư viện gắn nhãn V+A và sao; trang tổng hợp ghi kèm.
 
 Màn hình vào có animation vẽ A, V, chấm đỏ lặp lại để học viên hiểu quy ước trước khi chơi.
 
@@ -63,6 +71,10 @@ Người đi bộ là hình người 6 phần (đầu, thân, 2 tay, 2 chân) c�
 ## Điện thoại
 
 Nút ⛶ bật toàn màn hình (Android/Chrome). iPhone: Chia sẻ → Thêm vào MH chính, mở từ icon sẽ chạy toàn màn hình (manifest `display: fullscreen`). Đã chặn chọn chữ / copy khi đè giữ, chặn pinch-zoom trang, vùng vuốt nhìn nằm dưới hàng nút trên cùng nên Thư viện / Menu luôn bấm được.
+
+## Hiệu năng khi bay
+
+Bay trên 12 m: tắt pass phản chiếu nước (nhìn từ trên không thấy khác), bóng chỉ cập nhật mỗi 3 khung, đám đông được cull theo một bounding sphere, màu NPC chỉ upload một lần.
 
 ## Tải và hiệu năng
 

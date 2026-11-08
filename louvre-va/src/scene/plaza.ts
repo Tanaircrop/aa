@@ -99,12 +99,13 @@ export function buildPlaza(scene: THREE.Scene, collision: CollisionWorld, settin
   const waterGeo = new THREE.ShapeGeometry(waterShapes); waterGeo.rotateX(-Math.PI / 2);
   if (settings.planarReflection) {
     const refl = new Reflector(waterGeo, { textureWidth: 1024, textureHeight: 1024, color: 0x889aa8, clipBias: 0.003 });
-    refl.position.y = waterY; refl.rotation.set(0, 0, 0);
+    refl.position.y = waterY; refl.rotation.set(0, 0, 0); refl.name = 'reflector';
     (refl.material as THREE.Material).transparent = true;
     g.add(refl); water.push(refl);
     // thin tinted overlay to give the water a little body
-    const tint = new THREE.Mesh(waterGeo.clone(), new THREE.MeshPhysicalMaterial({ color: 0x224455, transparent: true, opacity: 0.25, roughness: 0.05, metalness: 0.1 }));
-    tint.position.y = waterY + 0.005; g.add(tint);
+    // opaque fallback under the reflector so the pools stay blue when the reflector is skipped at altitude
+    const tint = new THREE.Mesh(waterGeo.clone(), new THREE.MeshPhysicalMaterial({ color: 0x3f6378, roughness: 0.05, metalness: 0.4, envMapIntensity: 1.5 }));
+    tint.position.y = waterY - 0.01; g.add(tint);
   } else {
     const wm = new THREE.MeshPhysicalMaterial({ color: 0x5f8296, roughness: 0.04, metalness: 0.55, transparent: true, opacity: 0.94, envMapIntensity: 1.8 });
     const w = new THREE.Mesh(waterGeo, wm); w.position.y = waterY; w.receiveShadow = true; g.add(w); water.push(w);

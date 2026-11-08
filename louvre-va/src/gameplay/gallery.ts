@@ -15,6 +15,10 @@ export interface PhotoMeta {
   takenAt: string;
   width: number;
   height: number;
+  hasA?: boolean;
+  hasV?: boolean;
+  stars?: number;
+  points?: number;
 }
 
 export interface PhotoRecord {

@@ -47,7 +47,13 @@ export class Crowd {
   }
 
   /** Call once obstacles and avoid zones are registered: places every agent on a valid spot. */
-  spawn() { for (const a of this.agents) { a.pos = this.randomPoint(); a.target = this.randomPoint(); } }
+  spawn() {
+    for (const a of this.agents) { a.pos = this.randomPoint(); a.target = this.randomPoint(); }
+    // colours never change after spawn: upload them once, then let the GPU cull the whole crowd by one sphere
+    for (const m of Object.values(this.parts)) { if (m.instanceColor) m.instanceColor.needsUpdate = true; m.frustumCulled = true; }
+    this.boundsDirty = true;
+  }
+  private boundsDirty = false;
 
   private blocked(p: Vec2): boolean {
     for (const z of this.avoid) if (Math.hypot(p[0] - z.c[0], p[1] - z.c[1]) < z.r) return true;
@@ -98,6 +104,7 @@ export class Crowd {
       set(this.parts.legL, -0.1, 0.86, 0, -swing);
       set(this.parts.legR, 0.1, 0.86, 0, swing);
     }
-    for (const m of Object.values(this.parts)) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+    for (const m of Object.values(this.parts)) { m.instanceMatrix.needsUpdate = true; }
+    if (this.boundsDirty) { for (const m of Object.values(this.parts)) { m.computeBoundingSphere(); if (m.boundingSphere) m.boundingSphere.radius += 20; } this.boundsDirty = false; }
   }
 }

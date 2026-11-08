@@ -16,6 +16,8 @@ import { Crowd } from './scene/crowd';
 import { AnswerOverlay } from './scene/overlay';
 import { Tutorial } from './gameplay/tutorial';
 import { classifyTips } from './gameplay/answers';
+import { readComposition, type Composition } from './gameplay/composition';
+import { Progress } from './gameplay/score';
 import { pools } from './data/config';
 import { Hud } from './ui/hud';
 import { Minimap } from './ui/minimap';
@@ -53,6 +55,11 @@ let crowd: Crowd | null = null;
 const allTips = classifyTips(pools, config.mainPyramid.corners as Vec2[], { coincidentTol: config.answers.coincidentCornerTolerance, angleTolDeg: config.answers.angleToleranceDeg });
 const tutorialWanted = localStorage.getItem('lva.tutorialDone') !== '1';
 const tutorial = new Tutorial(engine.scene, allTips, tutorialWanted);
+const standardTips = allTips.filter((t) => t.cls === 'standard');
+let prog = new Progress('');
+const bonusGiven = new Set<string>();
+let comp: Composition = { hasA: false, hasV: false, tip: null, apexUpper: false, level: true };
+let frame = 0;
 
 const player = new Player(input, collision);
 player.flyEnabled = tSettings.flyEnabled;
@@ -94,11 +101,16 @@ async function shoot() {
   const n = await gallery.count(session.group);
   if (n >= config.camera.maxPhotosPerGroup) { toast(`Đã đủ ${config.camera.maxPhotosPerGroup} ảnh. Xoá bớt trong thư viện.`); return; }
   vf.doFlash(); shutterSound();
+  const shotComp = comp;
   const { canvas: c, meta } = photo.capture(player, session.group, env.presetId);
+  const sc = prog.scoreShot(shotComp, standardTips.length);
+  meta.hasA = shotComp.hasA; meta.hasV = shotComp.hasV; meta.stars = sc.stars; meta.points = sc.points;
   const blob = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), 'image/png'));
   await gallery.add({ id: uid(), group: session.group, blob, meta, strokes: [], note: '', createdAt: Date.now() });
   await refreshCounts();
-  toast(`Đã chụp (${session.photosTaken}/${config.camera.maxPhotosPerGroup}) · ${meta.label}`, 1800);
+  hud.setScore(prog.points, prog.discovered.size, standardTips.length);
+  const stars = '★'.repeat(sc.stars) + '☆'.repeat(3 - sc.stars);
+  toast(`${stars}  +${sc.points} điểm${sc.discovered ? ' · GÓC MỚI!' : ''}\n${sc.reasons.slice(1).join(' · ') || 'Thử tìm A và V'}`, sc.discovered ? 5000 : 3200);
 }
 
 async function refreshCounts() {
@@ -113,6 +125,10 @@ input.onShutter = () => shoot();
 input.onToggleCamera = () => setCamera(!photo.on);
 vf.onShutter = () => shoot();
 galleryPanel.onChange = () => refreshCounts();
+galleryPanel.annot.onSaved = (rec) => {
+  if (rec.strokes.length && rec.note && !bonusGiven.has(rec.id)) { bonusGiven.add(rec.id); prog.addAnnotationBonus(); hud.setScore(prog.points, prog.discovered.size, standardTips.length); toast('Đã vẽ và ghi chú +15', 2000); }
+  galleryPanel.refresh(); refreshCounts();
+};
 hud.btnGallery.onclick = () => { releaseForUi(); menu.hide(); teacherPanel?.hide(); galleryPanel.toggle(); };
 hud.btnMenu.onclick = () => { releaseForUi(); galleryPanel.hide(); teacherPanel?.hide(); menu.toggle(); };
 menu = new Menu({
@@ -149,16 +165,10 @@ hud.tutorialSkip.onclick = () => { tutorial.skip(); localStorage.setItem('lva.tu
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('contextmenu', (e) => { if (isTouch) e.preventDefault(); });
-const apexWorld = new THREE.Vector3(plaza.pyramidCenter[0], config.mainPyramid.height, -plaza.pyramidCenter[1]);
-function apexInUpperThird(): boolean {
-  if (!photo.on) return false;
-  const v = apexWorld.clone().project(engine.camera);
-  if (v.z > 1 || v.z < -1) return false;
-  const r = photo.frameRect(canvas.clientWidth, canvas.clientHeight);
-  const px = ((v.x + 1) / 2) * canvas.clientWidth, py = ((1 - v.y) / 2) * canvas.clientHeight;
-  return px > r.x && px < r.x + r.w && py > r.y && py < r.y + r.h * 0.4;
-}
-session.onPhase = (p) => { if (p === 'ended') { galleryPanel.show(); toast('Kết thúc bài. Xuất trang tổng hợp để nộp.', 6000); } };
+session.onPhase = (p) => {
+  if (p === 'grace') toast(`Hết giờ! ⭐ ${prog.points} điểm · ${prog.discovered.size}/${standardTips.length} góc V+A · ${session.photosTaken} ảnh. Còn 1 phút để xuất bài.`, 8000);
+  if (p === 'ended') { galleryPanel.show(); toast('Kết thúc bài. Xuất trang tổng hợp để nộp.', 6000); }
+};
 
 // --- deferred building (keeps first paint fast)
 const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res) => setTimeout(() => { progress(p, msg); fn(); res(); }, 30));
@@ -169,7 +179,7 @@ const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res
     crowd = new Crowd(engine.scene, collision, settings.crowd, config.crowd.speed);
     // keep walkers a few metres away from every pool corner and from the tutorial checkpoint
     crowd.avoid = allTips.map((t) => ({ c: t.pos, r: config.crowd.avoidRadius }));
-    crowd.avoid.push({ c: config.tutorial.checkpoint as Vec2, r: 5 }, { c: config.spawn.pos as Vec2, r: 7 });
+    crowd.avoid.push({ c: tutorial.checkpoint, r: 5 }, { c: config.spawn.pos as Vec2, r: 7 });
     crowd.spawn(); crowd.setEnabled(tSettings.crowd);
   }, 'Người đi bộ…', 0.9);
   applyTeacher(tSettings);
@@ -180,6 +190,7 @@ const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res
     onPreview: () => { session.phase = 'preview'; },
     onStart: (group) => {
       session.start(group); gameStarted = true; refreshCounts();
+      prog = new Progress(group); hud.setScore(prog.points, prog.discovered.size, standardTips.length);
       toast(`Nhóm ${group}: ${session.format(session.durationSec)} bắt đầu. Tìm V + A!`, 4000);
       if (!isTouch) canvas.requestPointerLock?.();
     },
@@ -211,7 +222,20 @@ engine.onUpdate((dt, t) => {
   updateFountains(plaza.fountains, t);
   crowd?.update(dt, t);
   session.update(dt);
-  if (gameStarted) tutorial.update(dt, t, player, photo.on, photo.focal, apexInUpperThird(), session.photosTaken, session.photosAnnotated);
+  comp = readComposition(player, photo, engine.camera, canvas.clientWidth, canvas.clientHeight, allTips, plaza.pyramidCenter);
+  vf.badges.a = comp.hasA; vf.badges.v = comp.hasV; vf.badges.both = comp.hasA && comp.hasV;
+  if (gameStarted) tutorial.update(dt, t, player, photo.on, photo.focal, comp.hasA, comp.hasV, session.photosTaken, session.photosAnnotated);
+  // hot / cold rescue: after 4 minutes with fewer than 2 corners found, point toward the nearest undiscovered corner
+  if (gameStarted && session.phase === 'playing' && !tutorial.active && session.durationSec - session.remaining > 240 && prog.discovered.size < 2) {
+    let best = Infinity;
+    for (const tp of standardTips) if (!prog.discovered.has(Progress.tipKey(tp))) best = Math.min(best, Math.hypot(player.pos[0] - tp.pos[0], player.pos[1] - tp.pos[1]));
+    hud.setHeat(best < 8 ? '🔥 Rất nóng: góc V+A ngay đây' : best < 25 ? '🌡 Ấm: góc V+A gần đây' : '❄️ Lạnh: đi dọc mép hồ');
+  } else hud.setHeat('');
+  // performance while flying high: skip the planar water reflection and refresh shadows every 3rd frame
+  frame++;
+  const high = player.alt > 12;
+  for (const w of plaza.water) if ((w as unknown as { isReflector?: boolean }).isReflector !== undefined || w.name === 'reflector') w.visible = !high;
+  engine.renderer.shadowMap.autoUpdate = !high; if (high && frame % 3 === 0) engine.renderer.shadowMap.needsUpdate = true;
   if (tutorial.step === 'done') localStorage.setItem('lva.tutorialDone', '1');
   hud.update(session, player, engine.stats);
   minimap.draw(player, photo.focal, photo.aspect, photo.on);

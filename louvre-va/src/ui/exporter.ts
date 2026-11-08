@@ -23,7 +23,8 @@ export async function exportSummary(group: string) {
     const ar = img.width / img.height; let w = cellW, h = cellW / ar; if (h > cellH - textH) { h = cellH - textH; w = h * ar; }
     ctx.fillStyle = '#000'; ctx.fillRect(x, y, cellW, cellH - textH);
     ctx.drawImage(img, x + (cellW - w) / 2, y + (cellH - textH - h) / 2, w, h);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 30px sans-serif'; ctx.fillText(`Ảnh ${i + 1} · ${r.meta.focal} mm · ${r.meta.aspect} · máy ${r.meta.cameraHeight} m · ${r.meta.label}`, x, y + cellH - textH + 44);
+    const comp = r.meta.hasA && r.meta.hasV ? 'V+A' : r.meta.hasA ? 'A' : r.meta.hasV ? 'V' : '—';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 30px sans-serif'; ctx.fillText(`Ảnh ${i + 1} · ${comp} ${'★'.repeat(r.meta.stars ?? 1)} · ${r.meta.focal} mm · ${r.meta.aspect} · máy ${r.meta.cameraHeight} m · ${r.meta.label}`, x, y + cellH - textH + 44);
     ctx.fillStyle = '#a8adb5'; ctx.font = '24px sans-serif';
     ctx.fillText(`Vị trí (${r.meta.pos[0]}, ${r.meta.pos[1]}) · hướng ${r.meta.compassDeg}° · nghiêng ${r.meta.pitchDeg}° · ${r.meta.preset}`, x, y + cellH - textH + 82);
     ctx.fillStyle = '#ffd23f'; ctx.font = 'italic 26px sans-serif';

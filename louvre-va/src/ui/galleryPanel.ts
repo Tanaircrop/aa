@@ -26,7 +26,8 @@ export class GalleryPanel {
     for (const r of recs) {
       const c = await renderAnnotated(r);
       const img = el('img'); img.src = c.toDataURL('image/jpeg', 0.6);
-      const t = el('div', { class: 't' }, [img, el('span', { class: 'tag' }, [r.meta.mode === 'fly' && !r.meta.label.includes('ngoài đời') ? '🚁 drone' : '🚶']), ...(r.strokes.length ? [el('span', { class: 'ok' })] : [])]);
+      const tag = (r.meta.hasA && r.meta.hasV ? 'V+A ' : r.meta.hasA ? 'A ' : r.meta.hasV ? 'V ' : '') + '★'.repeat(r.meta.stars ?? 1) + (r.meta.mode === 'fly' && !r.meta.label.includes('ngoài đời') ? ' 🚁' : '');
+      const t = el('div', { class: 't' }, [img, el('span', { class: 'tag' }, [tag]), ...(r.strokes.length ? [el('span', { class: 'ok' })] : [])]);
       t.onclick = () => this.annot.open(r);
       const del = el('button', { class: 'danger', style: 'position:absolute;right:2px;bottom:2px;padding:2px 6px;font-size:11px' }, ['xoá']);
       del.onclick = async (e) => { e.stopPropagation(); if (confirm('Xoá ảnh này?')) { await gallery.remove(r.id); this.refresh(); this.onChange?.(); } };

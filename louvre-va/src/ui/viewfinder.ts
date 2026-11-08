@@ -15,6 +15,8 @@ export class Viewfinder {
   root: HTMLElement; canvas: HTMLCanvasElement; readout: HTMLElement; controls: HTMLElement; flash: HTMLElement;
   onShutter: (() => void) | null = null;
   private t = 0; // 0 = lowered, 1 = raised
+  badges = { a: false, v: false, both: false };
+  private badgePulse = 0;
   private bob = 0;
   constructor(private cam: PhotoCamera, private isTouch: boolean) {
     this.canvas = el('canvas');
@@ -144,6 +146,19 @@ export class Viewfinder {
     ctx.fillText(`${this.cam.focal}mm  ${this.cam.aspectKey}  H ${h.toFixed(2)}m`, r.x + 10, r.y + 20);
     ctx.textAlign = 'right'; ctx.fillStyle = ok ? '#35d07f' : '#ff3b30'; ctx.fillText(`${rollDeg >= 0 ? '+' : ''}${rollDeg.toFixed(1)}°`, r.x + r.w - 10, r.y + 20);
     ctx.fillStyle = '#ff3b30'; ctx.textAlign = 'right'; ctx.fillText('● REC', r.x + r.w - 10, r.y + r.h - 12);
+    // composition badges: A (pyramid ridge) and V (pool edges). Both lit = the shot the exercise asks for.
+    this.badgePulse += 0.08;
+    const bw = 44, bh = 26; const bx = r.x + 10 + bw * 2 + 6, by = r.y + r.h - bh - 34;
+    const badge = (x: number, label: string, on: boolean) => {
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.fillStyle = on ? (this.badges.both ? `rgba(53,208,127,${0.75 + Math.sin(this.badgePulse) * 0.2})` : 'rgba(53,208,127,0.85)') : 'rgba(0,0,0,0.45)';
+      ctx.beginPath(); ctx.roundRect(x - bw, by, bw, bh, 7); ctx.fill();
+      ctx.strokeStyle = on ? '#35d07f' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = on ? '#0b1f14' : 'rgba(255,255,255,0.55)'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x - bw / 2, by + bh / 2 + 1);
+      ctx.restore();
+    };
+    badge(bx, 'V', this.badges.v); badge(bx - bw - 6, 'A', this.badges.a);
+    if (this.badges.both) { ctx.fillStyle = '#35d07f'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('V + A  chụp đi!', r.x + 10, by + bh + 18); }
     ctx.restore();
     this.readout.innerHTML = '';
   }

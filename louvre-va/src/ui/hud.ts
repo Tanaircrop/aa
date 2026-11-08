@@ -3,13 +3,15 @@ import type { Session } from '../gameplay/session';
 import type { Player } from '../gameplay/player';
 
 export class Hud {
-  root: HTMLElement; timer: HTMLElement; group: HTMLElement; tasks: HTMLElement; mode: HTMLElement; hints: HTMLElement; fps: HTMLElement;
+  root: HTMLElement; timer: HTMLElement; group: HTMLElement; tasks: HTMLElement; mode: HTMLElement; hints: HTMLElement; fps: HTMLElement; score: HTMLElement; heat: HTMLElement;
   btnMenu: HTMLButtonElement; btnGallery: HTMLButtonElement; btnTeacher: HTMLButtonElement; btnFull: HTMLButtonElement; tutorial: HTMLElement; tutorialSkip: HTMLButtonElement;
   constructor(isTouch: boolean) {
     this.group = el('span', { class: 'chip' }, ['Nhóm: ', el('b', {}, ['—'])]);
     this.timer = el('span', { class: 'chip', id: 'timer' }, ['10:00']);
     this.tasks = el('span', { class: 'chip' }, ['📷 0 chụp · ✎ 0 vẽ']);
     this.mode = el('span', { class: 'chip' }, ['Đi bộ']);
+    this.score = el('span', { class: 'chip' }, ['⭐ 0 · góc V+A 0/5']);
+    this.heat = el('span', { class: 'chip hidden' }, ['']);
     this.btnMenu = el('button', {}, ['☰ Menu']);
     this.btnGallery = el('button', {}, ['🖼 Thư viện']);
     this.btnTeacher = el('button', { class: 'hidden' }, ['🎓 Giảng viên']);
@@ -24,7 +26,7 @@ export class Hud {
     };
     this.tutorialSkip = el('button', { class: 't-skip' }, ['Bỏ qua']);
     this.tutorial = el('div', { id: 'tutorial', class: 'panel hidden' }, [el('div', { class: 't-head' }, [el('b', {}, ['']), el('span', { class: 'muted t-prog' }, ['']), this.tutorialSkip]), el('div', { class: 't-body' }, [''])]);
-    const left = el('div', { id: 'hud-left' }, [el('div', { class: 'row' }, [this.group, this.timer]), el('div', { class: 'row' }, [this.tasks, this.mode])]);
+    const left = el('div', { id: 'hud-left' }, [el('div', { class: 'row' }, [this.group, this.timer]), el('div', { class: 'row' }, [this.tasks, this.mode]), el('div', { class: 'row' }, [this.score, this.heat])]);
     const right = el('div', { class: 'row' }, [this.btnTeacher, this.btnGallery, this.btnMenu, ...(isTouch ? [this.btnFull] : [])]);
     this.root = el('div', { id: 'hud-top' }, [left, right]);
     this.hints = el('div', { id: 'hints', html: isTouch ? '' : '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>F</kbd> bay · <kbd>E/Q</kbd> nâng/hạ máy · <kbd>C</kbd> hoặc chuột phải: máy ảnh · <kbd>Space</kbd> chụp · con lăn hoặc <kbd>1</kbd>-<kbd>5</kbd>: zoom · <kbd>T</kbd> tỷ lệ · <kbd>L</kbd> lưới · <kbd>M</kbd> bản đồ · <kbd>Esc</kbd> menu' });
@@ -39,6 +41,9 @@ export class Hud {
     this.tutorial.querySelector('.t-body')!.textContent = body;
     this.tutorialSkip.classList.toggle('hidden', !progress);
   }
+  setScore(points: number, found: number, total: number) { this.score.textContent = `⭐ ${points} · góc V+A ${found}/${total}`; }
+  /** hot / cold nudge toward the nearest undiscovered V+A corner; empty string hides it */
+  setHeat(text: string) { this.heat.classList.toggle('hidden', !text); this.heat.textContent = text; }
   update(session: Session, player: Player, stats: { fps: number; drawCalls: number; triangles: number }) {
     this.group.querySelector('b')!.textContent = session.group || '—';
     if (session.phase === 'grace') { this.timer.textContent = `Xuất bài: ${session.format(session.graceRemaining)}`; this.timer.className = 'chip over'; }
