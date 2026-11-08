@@ -14,6 +14,9 @@ import { buildFacades } from './scene/facades';
 import { Environment, buildBackground } from './scene/environment';
 import { Crowd } from './scene/crowd';
 import { AnswerOverlay } from './scene/overlay';
+import { Tutorial } from './gameplay/tutorial';
+import { classifyTips } from './gameplay/answers';
+import { pools } from './data/config';
 import { Hud } from './ui/hud';
 import { Minimap } from './ui/minimap';
 import { Viewfinder } from './ui/viewfinder';
@@ -47,6 +50,9 @@ const env = new Environment(engine.scene, engine.renderer, settings);
 const plaza = buildPlaza(engine.scene, collision, settings);
 const overlay = new AnswerOverlay(engine.scene);
 let crowd: Crowd | null = null;
+const allTips = classifyTips(pools, config.mainPyramid.corners as Vec2[], { coincidentTol: config.answers.coincidentCornerTolerance, angleTolDeg: config.answers.angleToleranceDeg });
+const tutorialWanted = localStorage.getItem('lva.tutorialDone') !== '1';
+const tutorial = new Tutorial(engine.scene, allTips, tutorialWanted);
 
 const player = new Player(input, collision);
 player.flyEnabled = tSettings.flyEnabled;
@@ -137,6 +143,21 @@ if (isTouch) {
   touch.setVisible(true);
 }
 session.onReminder = (m) => toast(m, 5000);
+tutorial.onMessage = (t, b, p) => hud.setTutorial(t, b, p);
+hud.tutorialSkip.onclick = () => { tutorial.skip(); localStorage.setItem('lva.tutorialDone', '1'); };
+// block the browser's pinch / double-tap zoom on touch devices (iOS ignores user-scalable=no)
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('contextmenu', (e) => { if (isTouch) e.preventDefault(); });
+const apexWorld = new THREE.Vector3(plaza.pyramidCenter[0], config.mainPyramid.height, -plaza.pyramidCenter[1]);
+function apexInUpperThird(): boolean {
+  if (!photo.on) return false;
+  const v = apexWorld.clone().project(engine.camera);
+  if (v.z > 1 || v.z < -1) return false;
+  const r = photo.frameRect(canvas.clientWidth, canvas.clientHeight);
+  const px = ((v.x + 1) / 2) * canvas.clientWidth, py = ((1 - v.y) / 2) * canvas.clientHeight;
+  return px > r.x && px < r.x + r.w && py > r.y && py < r.y + r.h * 0.4;
+}
 session.onPhase = (p) => { if (p === 'ended') { galleryPanel.show(); toast('Kết thúc bài. Xuất trang tổng hợp để nộp.', 6000); } };
 
 // --- deferred building (keeps first paint fast)
@@ -144,7 +165,13 @@ const later = (fn: () => void, msg: string, p: number) => new Promise<void>((res
 (async () => {
   await later(() => buildFacades(engine.scene, collision, settings.facadeDetail), 'Mặt tiền Richelieu, Sully, Denon…', 0.45);
   await later(() => buildBackground(engine.scene), 'Tuileries, tháp Eiffel, vòng quay…', 0.7);
-  await later(() => { crowd = new Crowd(engine.scene, collision, settings.crowd, config.crowd.speed); crowd.setEnabled(tSettings.crowd); }, 'Người đi bộ…', 0.9);
+  await later(() => {
+    crowd = new Crowd(engine.scene, collision, settings.crowd, config.crowd.speed);
+    // keep walkers a few metres away from every pool corner and from the tutorial checkpoint
+    crowd.avoid = allTips.map((t) => ({ c: t.pos, r: config.crowd.avoidRadius }));
+    crowd.avoid.push({ c: config.tutorial.checkpoint as Vec2, r: 5 }, { c: config.spawn.pos as Vec2, r: 7 });
+    crowd.spawn(); crowd.setEnabled(tSettings.crowd);
+  }, 'Người đi bộ…', 0.9);
   applyTeacher(tSettings);
   progress(1, 'Xong');
   loader.remove();
@@ -184,6 +211,8 @@ engine.onUpdate((dt, t) => {
   updateFountains(plaza.fountains, t);
   crowd?.update(dt, t);
   session.update(dt);
+  if (gameStarted) tutorial.update(dt, t, player, photo.on, photo.focal, apexInUpperThird(), session.photosTaken, session.photosAnnotated);
+  if (tutorial.step === 'done') localStorage.setItem('lva.tutorialDone', '1');
   hud.update(session, player, engine.stats);
   minimap.draw(player, photo.focal, photo.aspect, photo.on);
   vf.draw(player, photo.on, dt);
@@ -193,4 +222,4 @@ engine.onUpdate((dt, t) => {
 engine.start();
 
 // expose a little for QA scripts
-(window as unknown as { lva: unknown }).lva = { player, photo, session, env, engine, overlay, setCamera, gotoPose, referencePhotos, THREE };
+(window as unknown as { lva: unknown }).lva = { player, photo, session, env, engine, overlay, setCamera, gotoPose, referencePhotos, THREE, galleryPanel, menu, tutorial, get teacherPanel() { return teacherPanel; } };

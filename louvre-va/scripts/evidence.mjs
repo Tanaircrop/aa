@@ -60,23 +60,23 @@ await run('desktop', { steps: async (page) => {
   await settle(page, 800);
   await page.keyboard.press('Space'); await settle(page, 1500);
   await page.evaluate(() => document.exitPointerLock()); await settle(page, 300);
-  await page.click('#hud-top button:has-text("Thư viện")'); await settle(page, 1200);
+  await page.evaluate(() => window.lva.galleryPanel.show()); await settle(page, 1500);
   await shot(page, '07-gallery.png', 'Thư viện ảnh (IndexedDB) sau khi chụp');
-  await page.click('.thumbs .t'); await settle(page, 800);
+  await page.click('.thumbs .t', { force: true, timeout: 120000 }); await settle(page, 800);
   const c = await page.$('#annot canvas'); const b = await c.boundingBox();
   await page.mouse.move(b.x + b.width * 0.3, b.y + b.height * 0.8); await page.mouse.down(); await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.3, { steps: 10 }); await page.mouse.up();
-  await page.click('text=V nét đứt');
+  await page.click('text=V nét đứt', { force: true, timeout: 120000 });
   await page.mouse.move(b.x + b.width * 0.1, b.y + b.height * 0.95); await page.mouse.down(); await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.55, { steps: 10 }); await page.mouse.up();
   await page.fill('#annot textarea', 'Đỉnh V dẫn mắt vào chân kim tự tháp');
   await shot(page, '08-annotate.png', 'Vẽ A (liền), V (đứt) và ghi chú lên ảnh');
-  await page.click('#annot .bottom button.primary'); await settle(page, 800);
+  await page.click('#annot .bottom button.primary', { force: true, timeout: 120000 }); await settle(page, 800);
 }});
 
 await run('teacher', { teacher: true, steps: async (page) => {
   await enter(page);
   await page.evaluate(() => document.exitPointerLock()); await settle(page, 300);
-  await page.click('#hud-top button:has-text("Giảng viên")'); await settle(page, 500);
-  await page.click('label:has-text("Overlay") input');
+  await page.evaluate(() => window.lva.teacherPanel.show()); await settle(page, 500);
+  await page.click('label:has-text("Overlay") input', { force: true, timeout: 120000 });
   await page.evaluate(() => { window.lva.player.teleport([-40, -30], 25, 28, -22); });
   await settle(page, 1500);
   await shot(page, '09-teacher-overlay.png', 'Chế độ giảng viên: overlay 5 đáp án xanh, T1/T2 + V phối cảnh vàng, panel cài đặt');

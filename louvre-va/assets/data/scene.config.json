@@ -207,19 +207,31 @@
       "pavilions": [
         {
           "name": "Turgot",
-          "x": -98,
+          "x": -95,
           "width": 22
         },
         {
           "name": "Richelieu",
-          "x": -28,
-          "width": 26,
+          "x": 0,
+          "width": 28,
           "dome": true
         },
         {
           "name": "Colbert",
-          "x": 42,
+          "x": 58,
           "width": 22
+        }
+      ],
+      "glassCourts": [
+        {
+          "x": -50,
+          "width": 26,
+          "depth": 24
+        },
+        {
+          "x": 28,
+          "width": 26,
+          "depth": 24
         }
       ]
     },
@@ -233,19 +245,26 @@
       "pavilions": [
         {
           "name": "Mollien",
-          "x": -98,
+          "x": -95,
           "width": 22
         },
         {
           "name": "Denon",
-          "x": -28,
-          "width": 26,
+          "x": 0,
+          "width": 28,
           "dome": true
         },
         {
           "name": "Daru",
-          "x": 42,
+          "x": 58,
           "width": 22
+        }
+      ],
+      "glassCourts": [
+        {
+          "x": -50,
+          "width": 26,
+          "depth": 24
         }
       ]
     },
@@ -261,6 +280,48 @@
           "name": "Horloge",
           "x": 0,
           "width": 30,
+          "dome": true
+        }
+      ]
+    },
+    {
+      "id": "Rohan-Marsan",
+      "side": "north",
+      "facadeY": 82,
+      "depth": 34,
+      "xFrom": -432,
+      "xTo": -165,
+      "pavilions": [
+        {
+          "name": "Rohan",
+          "x": -178,
+          "width": 22
+        },
+        {
+          "name": "Marsan",
+          "x": -420,
+          "width": 26,
+          "dome": true
+        }
+      ]
+    },
+    {
+      "id": "Flore",
+      "side": "south",
+      "facadeY": -82,
+      "depth": 34,
+      "xFrom": -432,
+      "xTo": -165,
+      "pavilions": [
+        {
+          "name": "Lesdiguieres",
+          "x": -178,
+          "width": 22
+        },
+        {
+          "name": "Flore",
+          "x": -420,
+          "width": 26,
           "dome": true
         }
       ]
@@ -338,7 +399,7 @@
     ]
   },
   "walkBounds": {
-    "xMin": -232,
+    "xMin": -240,
     "xMax": 76,
     "yMin": -79,
     "yMax": 79
@@ -552,8 +613,62 @@
     ]
   },
   "lighting": {
-    "default": "sunset",
+    "default": "day",
     "presets": {
+      "day": {
+        "label": "Trời xanh nhiều mây",
+        "utc": "2026-06-21T14:30:00Z",
+        "sky": "clear",
+        "turbidity": 3,
+        "rayleigh": 3.6,
+        "mie": 0.004,
+        "mieG": 0.75,
+        "sunIntensity": 3.0,
+        "ambient": 0.6,
+        "fog": 5e-05,
+        "exposure": 0.6,
+        "envIntensity": 0.6,
+        "clouds": 0.7,
+        "env": {
+          "top": [
+            0.35,
+            0.5,
+            0.95
+          ],
+          "bottom": [
+            1.1,
+            1.12,
+            1.2
+          ],
+          "ground": [
+            0.4,
+            0.38,
+            0.35
+          ]
+        },
+        "skyColors": {
+          "zenith": [
+            0.2,
+            0.42,
+            1.0
+          ],
+          "horizon": [
+            0.9,
+            0.98,
+            1.15
+          ],
+          "horizonSun": [
+            1.1,
+            1.1,
+            1.15
+          ],
+          "sun": [
+            9,
+            8.5,
+            8
+          ]
+        }
+      },
       "sunset": {
         "label": "Hoàng hôn",
         "utc": "2026-06-21T18:25:00Z",
@@ -582,6 +697,29 @@
             0.35,
             0.28,
             0.22
+          ]
+        },
+        "clouds": 0.35,
+        "skyColors": {
+          "zenith": [
+            0.22,
+            0.3,
+            0.65
+          ],
+          "horizon": [
+            1.25,
+            0.8,
+            0.55
+          ],
+          "horizonSun": [
+            2.4,
+            1.3,
+            0.6
+          ],
+          "sun": [
+            10,
+            5.5,
+            2.5
           ]
         }
       },
@@ -613,6 +751,28 @@
             0.33,
             0.3
           ]
+        },
+        "skyColors": {
+          "zenith": [
+            0.75,
+            0.8,
+            0.88
+          ],
+          "horizon": [
+            1.7,
+            1.75,
+            1.8
+          ],
+          "horizonSun": [
+            1.7,
+            1.75,
+            1.8
+          ],
+          "sun": [
+            0,
+            0,
+            0
+          ]
         }
       },
       "noon": {
@@ -620,11 +780,11 @@
         "utc": "2026-06-21T12:00:00Z",
         "sky": "clear",
         "turbidity": 3,
-        "rayleigh": 1.2,
-        "sunIntensity": 2.0,
-        "ambient": 0.4,
+        "rayleigh": 3.2,
+        "sunIntensity": 3.0,
+        "ambient": 0.55,
         "fog": 6e-05,
-        "exposure": 0.6,
+        "exposure": 0.58,
         "envIntensity": 0.45,
         "mie": 0.0015,
         "mieG": 0.65,
@@ -643,6 +803,29 @@
             0.4,
             0.38,
             0.35
+          ]
+        },
+        "clouds": 0.15,
+        "skyColors": {
+          "zenith": [
+            0.18,
+            0.38,
+            0.95
+          ],
+          "horizon": [
+            0.85,
+            0.93,
+            1.1
+          ],
+          "horizonSun": [
+            1.1,
+            1.1,
+            1.15
+          ],
+          "sun": [
+            9,
+            8.5,
+            8
           ]
         }
       }
@@ -717,10 +900,49 @@
   ],
   "crowd": {
     "count": 80,
-    "speed": 0.9
+    "speed": 0.9,
+    "avoidRadius": 3.5
   },
   "credits": [
     "© OpenStreetMap contributors (ODbL)",
     "Kim tự tháp Louvre: I. M. Pei. Dùng nội bộ lớp học, phi thương mại."
-  ]
+  ],
+  "carrousel": {
+    "center": [
+      -152,
+      0
+    ],
+    "ringInner": 24,
+    "ringOuter": 40,
+    "lawn": [
+      46,
+      34
+    ],
+    "invertedPyramidSide": 13.3,
+    "gardenFrom": -205,
+    "gardenTo": -425,
+    "hedgeRows": [
+      -70,
+      -52,
+      52,
+      70
+    ]
+  },
+  "courCarree": {
+    "xFrom": 118,
+    "xTo": 280,
+    "yFrom": -82,
+    "yTo": 82,
+    "depth": 32,
+    "height": 24
+  },
+  "tutorial": {
+    "checkpoint": [
+      -30,
+      0
+    ],
+    "headingDeg": 0,
+    "radius": 2.5,
+    "hintRadius": 4.0
+  }
 }

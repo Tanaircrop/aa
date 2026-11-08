@@ -33,6 +33,10 @@ export class Minimap {
     ctx.strokeStyle = '#e8c07a'; ctx.lineWidth = 1.5; ctx.beginPath();
     (config.mainPyramid.corners as [number, number][]).forEach((q, i) => (i ? ctx.lineTo(X(q[0]), Y(q[1])) : ctx.moveTo(X(q[0]), Y(q[1])))); ctx.closePath(); ctx.stroke();
     for (const sp of smallPyramids) { ctx.save(); ctx.translate(X(sp.center[0]), Y(sp.center[1])); ctx.rotate(-(sp.rotationDeg * Math.PI) / 180); ctx.strokeRect((-sp.side / 2) * this.scale, (-sp.side / 2) * this.scale, sp.side * this.scale, sp.side * this.scale); ctx.restore(); }
+    // Place du Carrousel roundabout
+    const cr = config.carrousel; ctx.strokeStyle = 'rgba(200,200,200,0.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(X(cr.center[0]), Y(cr.center[1]), cr.ringOuter * this.scale, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(95,138,58,0.7)'; ctx.beginPath(); ctx.ellipse(X(cr.center[0]), Y(cr.center[1]), (cr.lawn[0] / 2) * this.scale, (cr.lawn[1] / 2) * this.scale, 0, 0, Math.PI * 2); ctx.fill();
     // statue + arc hint
     ctx.fillStyle = '#ccc'; ctx.beginPath(); ctx.arc(X(config.statueLouisXIV.pos[0]), Y(config.statueLouisXIV.pos[1]), 2, 0, Math.PI * 2); ctx.fill();
     // view cone

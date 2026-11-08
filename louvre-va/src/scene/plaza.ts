@@ -194,6 +194,40 @@ export function buildPlaza(scene: THREE.Scene, collision: CollisionWorld, settin
   for (const dx of [-7.5, -2.8, 2.8, 7.5]) { const col = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 11, 10), new THREE.MeshStandardMaterial({ color: 0xa44a3a, roughness: 0.6 })); col.position.set(ax, 5.5, az + dx); col.castShadow = true; g.add(col); }
   collision.addBox({ xMin: arc.pos[0] - arc.depth / 2, xMax: arc.pos[0] + arc.depth / 2, yMin: arc.pos[1] - arc.width / 2, yMax: arc.pos[1] + arc.width / 2, h: 20, name: 'arc' });
 
+  // Place du Carrousel: ring road, lawn ellipse with the diamond pattern and the inverted pyramid's glass square
+  const cr = config.carrousel; const [rx, rz] = toThree(cr.center as Vec2);
+  const road = new THREE.Mesh(new THREE.RingGeometry(cr.ringInner, cr.ringOuter, 64), new THREE.MeshStandardMaterial({ color: 0x4a4a4c, roughness: 0.95 }));
+  road.rotation.x = -Math.PI / 2; road.position.set(rx, 0.02, rz); road.receiveShadow = true; g.add(road);
+  const lawnC = document.createElement('canvas'); lawnC.width = lawnC.height = 512; const lc = lawnC.getContext('2d')!;
+  lc.fillStyle = '#5f8a3a'; lc.fillRect(0, 0, 512, 512);
+  lc.strokeStyle = '#cfc6b2'; lc.lineWidth = 10; lc.beginPath(); lc.moveTo(256, 60); lc.lineTo(452, 256); lc.lineTo(256, 452); lc.lineTo(60, 256); lc.closePath(); lc.stroke();
+  lc.beginPath(); lc.moveTo(256, 60); lc.lineTo(256, 452); lc.moveTo(60, 256); lc.lineTo(452, 256); lc.stroke();
+  const lawnT = new THREE.CanvasTexture(lawnC); lawnT.colorSpace = THREE.SRGBColorSpace;
+  const lawn = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshStandardMaterial({ map: lawnT, roughness: 1 }));
+  lawn.rotation.x = -Math.PI / 2; lawn.scale.set(cr.lawn[0] / 2, cr.lawn[1] / 2, 1); lawn.position.set(rx, 0.04, rz); lawn.receiveShadow = true; g.add(lawn);
+  const inv = new THREE.Mesh(new THREE.BoxGeometry(cr.invertedPyramidSide, 0.3, cr.invertedPyramidSide), glass);
+  inv.rotation.y = Math.PI / 4; inv.position.set(rx, 0.2, rz); g.add(inv);
+  const invRim = new THREE.Mesh(new THREE.BoxGeometry(cr.invertedPyramidSide + 1.2, 0.5, cr.invertedPyramidSide + 1.2), granite);
+  invRim.rotation.y = Math.PI / 4; invRim.position.set(rx, 0.25, rz); g.add(invRim);
+  collision.addCircle(cr.center as Vec2, cr.ringInner);
+  // Carrousel garden: lawns, box hedges and gravel paths between the roundabout and the Arc
+  const hedgeM = new THREE.MeshStandardMaterial({ color: 0x3b5e2a, roughness: 1 });
+  const gLen = cr.gardenFrom - cr.gardenTo; const gMid = (cr.gardenFrom + cr.gardenTo) / 2;
+  for (const yRow of cr.hedgeRows) {
+    const h = new THREE.Mesh(new THREE.BoxGeometry(gLen, 1.2, 1.4), hedgeM); const [hx, hz] = toThree([gMid, yRow]); h.position.set(hx, 0.6, hz); h.castShadow = true; g.add(h);
+    collision.addBox({ xMin: cr.gardenTo, xMax: cr.gardenFrom, yMin: yRow - 0.7, yMax: yRow + 0.7, h: 1.2 });
+  }
+  const lawnM = new THREE.MeshStandardMaterial({ color: 0x5f8a3a, roughness: 1 });
+  for (const [y0, y1] of [[-70, -52], [52, 70]] as [number, number][]) {
+    const l = new THREE.Mesh(new THREE.PlaneGeometry(gLen, y1 - y0), lawnM); const [lx, lz] = toThree([gMid, (y0 + y1) / 2]); l.rotation.x = -Math.PI / 2; l.position.set(lx, 0.03, lz); l.receiveShadow = true; g.add(l);
+  }
+  // avenue trees along the garden
+  const trunkM = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 1 }); const crownM = new THREE.MeshStandardMaterial({ color: 0x4a7a35, roughness: 1 });
+  const tMats: THREE.Matrix4[] = []; const cMats: THREE.Matrix4[] = [];
+  for (let x = cr.gardenFrom - 8; x > cr.gardenTo; x -= 11) for (const y of [-61, 61]) { const [tx, tz] = toThree([x, y]); tMats.push(new THREE.Matrix4().makeTranslation(tx, 2.5, tz)); cMats.push(new THREE.Matrix4().compose(new THREE.Vector3(tx, 7.5, tz), new THREE.Quaternion(), new THREE.Vector3(1, 0.9, 1))); }
+  g.add(instanced(new THREE.CylinderGeometry(0.3, 0.4, 5, 6), trunkM, tMats));
+  g.add(instanced(new THREE.SphereGeometry(4, 8, 6), crownM, cMats));
+
   scene.add(g);
   return { group: g, water, fountains, pyramidCenter: [cx, cy], pyramidSide: side, pyramidRotDeg: (rot * 180) / Math.PI };
 }

@@ -4,7 +4,7 @@ import type { Player } from '../gameplay/player';
 
 export class Hud {
   root: HTMLElement; timer: HTMLElement; group: HTMLElement; tasks: HTMLElement; mode: HTMLElement; hints: HTMLElement; fps: HTMLElement;
-  btnMenu: HTMLButtonElement; btnGallery: HTMLButtonElement; btnTeacher: HTMLButtonElement;
+  btnMenu: HTMLButtonElement; btnGallery: HTMLButtonElement; btnTeacher: HTMLButtonElement; btnFull: HTMLButtonElement; tutorial: HTMLElement; tutorialSkip: HTMLButtonElement;
   constructor(isTouch: boolean) {
     this.group = el('span', { class: 'chip' }, ['Nhóm: ', el('b', {}, ['—'])]);
     this.timer = el('span', { class: 'chip', id: 'timer' }, ['10:00']);
@@ -13,12 +13,31 @@ export class Hud {
     this.btnMenu = el('button', {}, ['☰ Menu']);
     this.btnGallery = el('button', {}, ['🖼 Thư viện']);
     this.btnTeacher = el('button', { class: 'hidden' }, ['🎓 Giảng viên']);
+    this.btnFull = el('button', { title: 'Toàn màn hình' }, ['⛶']);
+    this.btnFull.onclick = () => {
+      const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void };
+      const root = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+      if (d.fullscreenElement || d.webkitFullscreenElement) { (d.exitFullscreen?.bind(d) ?? d.webkitExitFullscreen)?.(); }
+      else if (root.requestFullscreen) root.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+      else if (root.webkitRequestFullscreen) root.webkitRequestFullscreen();
+      else alert('iPhone: Safari không có toàn màn hình. Bấm Chia sẻ → "Thêm vào MH chính", mở từ icon đó sẽ chạy toàn màn hình.');
+    };
+    this.tutorialSkip = el('button', { class: 't-skip' }, ['Bỏ qua']);
+    this.tutorial = el('div', { id: 'tutorial', class: 'panel hidden' }, [el('div', { class: 't-head' }, [el('b', {}, ['']), el('span', { class: 'muted t-prog' }, ['']), this.tutorialSkip]), el('div', { class: 't-body' }, [''])]);
     const left = el('div', { id: 'hud-left' }, [el('div', { class: 'row' }, [this.group, this.timer]), el('div', { class: 'row' }, [this.tasks, this.mode])]);
-    const right = el('div', { class: 'row' }, [this.btnTeacher, this.btnGallery, this.btnMenu]);
+    const right = el('div', { class: 'row' }, [this.btnTeacher, this.btnGallery, this.btnMenu, ...(isTouch ? [this.btnFull] : [])]);
     this.root = el('div', { id: 'hud-top' }, [left, right]);
     this.hints = el('div', { id: 'hints', html: isTouch ? '' : '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>F</kbd> bay · <kbd>E/Q</kbd> nâng/hạ máy · <kbd>C</kbd> hoặc chuột phải: máy ảnh · <kbd>Space</kbd> chụp · con lăn hoặc <kbd>1</kbd>-<kbd>5</kbd>: zoom · <kbd>T</kbd> tỷ lệ · <kbd>L</kbd> lưới · <kbd>M</kbd> bản đồ · <kbd>Esc</kbd> menu' });
     this.fps = el('div', { id: 'fps' });
-    ui().append(this.root, this.hints, this.fps, el('div', { id: 'crosshair' }));
+    ui().append(this.root, this.hints, this.fps, el('div', { id: 'crosshair' }), this.tutorial);
+  }
+  setTutorial(title: string, body: string, progress: string) {
+    if (!title && !body) { this.tutorial.classList.add('hidden'); return; }
+    this.tutorial.classList.remove('hidden');
+    this.tutorial.querySelector('b')!.textContent = title;
+    this.tutorial.querySelector('.t-prog')!.textContent = progress;
+    this.tutorial.querySelector('.t-body')!.textContent = body;
+    this.tutorialSkip.classList.toggle('hidden', !progress);
   }
   update(session: Session, player: Player, stats: { fps: number; drawCalls: number; triangles: number }) {
     this.group.querySelector('b')!.textContent = session.group || '—';

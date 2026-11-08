@@ -38,11 +38,31 @@ Hệ toạ độ: mặt bằng `x` hướng đông (Sully), `y` hướng bắc (
 - **M3** màn hình vào (tên nhóm, hình mẫu, 30 giây), đồng hồ đếm ngược với 2 mốc nhắc (60 % và 80 % thời lượng), khoá chụp + 1 phút xuất bài, vẽ A nét liền / V nét đứt / chấm đỏ / ghi chú, xuất PNG từng ảnh và trang tổng hợp; chế độ giảng viên (PIN, thời gian 5/10/15, đám đông, bay, ánh sáng, overlay 5 đáp án xanh + T1/T2 + V phối cảnh vàng, nút "đến vị trí", 3 tư thế ảnh mẫu với "đến góc này" và thanh trượt so sánh, thêm ảnh mẫu lúc chạy).
 - **M4** mặt tiền module (vòm cửa, cột đôi, cửa sổ, lan can, mái mansard, dormer, ống khói, tượng, pavilion có mái vòm) bằng InstancedMesh; kim tự tháp khung thép lưới thoi 17 hàng, kính transmission (mức cao) / env map (trung, thấp); nước phản chiếu planar (cao) / env map; đài phun particle; 3 preset ánh sáng theo vị trí mặt trời thật của Paris; mưa; hậu cảnh Tuileries, tháp Eiffel, vòng quay đúng hướng; đám đông instanced; 3 mức chất lượng tự chọn theo thiết bị; tải dần (hồ + kim tự tháp trước, mặt tiền và hậu cảnh sau); bloom (cao); deploy Vercel, noindex.
 
+## Hướng dẫn trong game
+
+Lần đầu vào, một vòng tròn vàng trên sân là **checkpoint**: đi tới đó, game dẫn qua 6 bước (giơ máy, chọn 24 mm, đặt đỉnh kim tự tháp vào 1/3 trên, chụp, mở thư viện, kéo đường A). Sau đó chỉ còn gợi ý nhỏ khi đứng gần mũi hồ 90°, không lộ đáp án. "Bỏ qua" tắt hướng dẫn (lưu trong trình duyệt).
+
+Màn hình vào có animation vẽ A, V, chấm đỏ lặp lại để học viên hiểu quy ước trước khi chơi.
+
+## Vẽ lên ảnh
+
+A và V là **đường thẳng 2 điểm**: kéo một lần để đặt, kéo đầu mút (chấm trắng) để chỉnh. Không vẽ tự do nên nét không méo. Chấm đỏ kéo được. Hoàn tác, xoá nét, lưu, tải PNG.
+
 ## Điều khiển máy ảnh
 
 Bật máy: `C` hoặc chuột phải (điện thoại: nút 📷). Máy ảnh hiện trong tay ở góc dưới phải khi chưa bật, giơ lên khi bật.
 Zoom: con lăn chuột, phím `1`-`5`, hoặc pinch 2 ngón trên điện thoại (bước qua 16 / 24 / 35 / 50 / 85 mm).
 `T` đổi tỷ lệ khung, `L` đổi lưới, `Z`/`X` nghiêng máy, `Space` chụp. `Esc` thả chuột để bấm nút trên khung ngắm.
+
+## Bố cục cảnh
+
+Theo ảnh trên cao: sân chữ U với 3 pavilion mỗi cánh (Turgot, Richelieu, Colbert / Mollien, Denon, Daru), Pavillon de l'Horloge (Sully) ở đông, Cour Carrée phía sau; cánh Rohan-Marsan và Flore kéo dài về tây tới Pavillon de Marsan / Flore; Place du Carrousel có vòng xuyến, bãi cỏ hình thoi và kim tự tháp ngược; vườn Carrousel có hàng rào xanh, bãi cỏ và hàng cây dẫn tới Arc du Carrousel; mái kính trên các sân trong Marly, Puget, Visconti. Bầu trời là shader riêng (gradient + mặt trời + mây sprite) với 4 preset: trời xanh nhiều mây (mặc định), hoàng hôn, trời mây mưa, nắng trưa.
+
+Người đi bộ là hình người 6 phần (đầu, thân, 2 tay, 2 chân) có chu kỳ bước, tránh bán kính 3,5 m quanh 21 mũi hồ, điểm xuất phát và checkpoint.
+
+## Điện thoại
+
+Nút ⛶ bật toàn màn hình (Android/Chrome). iPhone: Chia sẻ → Thêm vào MH chính, mở từ icon sẽ chạy toàn màn hình (manifest `display: fullscreen`). Đã chặn chọn chữ / copy khi đè giữ, chặn pinch-zoom trang, vùng vuốt nhìn nằm dưới hàng nút trên cùng nên Thư viện / Menu luôn bấm được.
 
 ## Tải và hiệu năng
 
