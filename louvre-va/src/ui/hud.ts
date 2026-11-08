@@ -50,6 +50,7 @@ export class Hud {
     if (session.phase === 'grace') { this.timer.textContent = `Xuất bài: ${session.format(session.graceRemaining)}`; this.timer.className = 'chip over'; }
     else if (session.phase === 'ended') { this.timer.textContent = 'Kết thúc'; this.timer.className = 'chip over'; }
     else if (session.phase === 'tutorial') { this.timer.textContent = 'Hướng dẫn · chưa tính giờ'; this.timer.className = 'chip'; }
+    else if (session.phase === 'intro' || session.phase === 'preview') { this.timer.textContent = session.format(session.durationSec); this.timer.className = 'chip'; }
     else { this.timer.textContent = session.format(session.remaining); this.timer.className = 'chip' + (session.remaining < 120 ? ' warn' : ''); }
     this.tasks.textContent = `📷 ${session.photosTaken} chụp · ✎ ${session.photosAnnotated} vẽ`;
     this.mode.textContent = player.mode === 'fly' ? `🚁 Bay · ${player.alt.toFixed(1)} m · ${player.flySpeed.toFixed(0)} m/s` : `🚶 Đi bộ · máy ${player.cameraHeight.toFixed(2)} m`;
