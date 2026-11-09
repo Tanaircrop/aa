@@ -98,7 +98,18 @@ Sao mỗi ảnh: 3 sao từ 80 điểm, 2 sao từ 45, còn lại 1 sao. Ảnh c
 
 **Trình tự chữa bài (10 phút)**: mở dashboard, chiếu bản đồ vị trí cuối của các nhóm, bật chế độ giảng viên trong game (`?mode=teacher&pin=1789`) với overlay 5 đáp án xanh và 3 trường hợp vàng, bấm "đến vị trí" lần lượt 1 → 5, đối chiếu ảnh nhóm, công bố câu trả lời 5, trao giải.
 
-## 8. Ảnh tham chiếu
+## 8. Chấm điểm tự động trên dashboard
+
+Nút **Chấm toàn bộ lớp** trong `/admin.html` tải mọi ảnh của lớp (action `all_photos`) và chạy `src/gameplay/grading.ts`:
+
+1. Từ tư thế máy lưu trong metadata ảnh (vị trí, hướng la bàn, độ cao máy, góc ngẩng, tiêu cự, tỷ lệ), chiếu lại sống kim tự tháp (đỉnh tới 4 góc đáy) và hai bờ hồ của mũi hồ nhóm đang đứng vào toạ độ ảnh, cùng mô hình camera với game. Nét xanh lá hiện đè lên ảnh để giảng viên đối chiếu bằng mắt.
+2. So nét của nhóm: nét A liền so với sống kim tự tháp gần nhất (sai góc dưới 7° và lệch dưới 3,5 % chiều cao khung là **đúng**, dưới 14° và 7 % là **gần đúng**); hai nét V đứt phải bám hai bờ hồ khác nhau và giao nhau tại mũi hồ (hoặc dưới nửa khung khi mũi hồ nằm dưới máy); chấm đỏ phải nằm trong lòng V và cách trục phân giác dưới 8 %; câu ghi chú dài từ 12 ký tự và có từ chỉ hướng nhìn (dẫn, mắt, vào, tới...).
+3. Ảnh **vẽ đủ** khi A và V đạt đúng hoặc gần đúng, có chấm và có câu. Nhóm **đủ điều kiện dự giải** khi có 2 ảnh V+A vẽ đủ tại 2 góc chuẩn khác nhau.
+4. Bảng xếp hạng: nhóm đủ điều kiện xếp trước, theo điểm, hoà điểm theo mục 7. Đề xuất giải Nhất, Nhì, Tinh mắt tự động; giải Người kể chuyện liệt kê 3 câu ghi chú dài nhất để giảng viên chọn; giải Góc tranh luận và Drone liệt kê nhóm có ảnh phù hợp. Nút **Tải CSV** xuất bảng.
+
+Ảnh minh hoạ nét chiếu khớp với ảnh chụp trong game: `production/qa/evidence/admin-cham-diem.png`. Test: `tests/grading.test.ts`.
+
+## 9. Ảnh tham chiếu
 
 Chụp từ chính game ở tư thế máy đáp án (bản build hiện tại, Chromium headless, mức medium). Dùng để minh hoạ điều kiện chiến thắng; ảnh học viên chụp sẽ cùng bố cục.
 

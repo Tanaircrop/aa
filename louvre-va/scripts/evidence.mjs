@@ -29,7 +29,7 @@ async function run(name, { mobile = false, teacher = false, steps }) {
 }
 const settle = (page, ms = 1200) => page.waitForTimeout(ms);
 const shot = async (page, file, label) => { await page.screenshot({ path: `${OUT}/${file}`, timeout: 120000 }); shots.push([file, label]); console.log('shot', file); };
-const enter = async (page) => { await page.click('text=Bỏ qua xem mẫu'); await page.fill('input[placeholder^="Tên nhóm"]', 'QA'); await page.click('text=Vào quảng trường'); await settle(page, 800); await page.evaluate(() => { document.exitPointerLock(); window.lva.player.touchLook.dx = 0; window.lva.player.touchLook.dy = 0; }); };
+const enter = async (page) => { await page.click('text=Đã rõ đề, xem hướng dẫn'); await page.click('text=Bỏ qua xem mẫu'); await page.fill('input[placeholder^="Tên nhóm"]', 'QA'); await page.click('text=Vào quảng trường'); await settle(page, 800); await page.evaluate(() => { document.exitPointerLock(); window.lva.player.touchLook.dx = 0; window.lva.player.touchLook.dy = 0; }); };
 
 await run('desktop', { steps: async (page) => {
   await shot(page, '01-intro.png', 'Màn hình vào: tên nhóm, hình mẫu V+A, quy ước');

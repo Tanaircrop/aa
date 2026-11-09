@@ -11,6 +11,8 @@ page.on('pageerror', (e) => console.log('PAGE ERROR', e.message));
 await page.addInitScript((q) => localStorage.setItem('lva.quality', q), process.env.Q || 'medium');
 await page.goto('http://localhost:4175/' + (process.env.QS || ''));
 await page.waitForSelector('.loader', { state: 'detached', timeout: 90000 });
+if (process.env.INTRO) { await page.waitForTimeout(1500); await page.screenshot({ path: `${OUT}/de-bai.png`, timeout: 120000, fullPage: false }); console.log('shot de-bai'); }
+await page.click('text=Đã rõ đề, xem hướng dẫn');
 if (process.env.INTRO) { await page.waitForTimeout(2500); await page.screenshot({ path: `${OUT}/intro-real.png`, timeout: 120000, fullPage: false }); console.log('shot intro-real'); }
 await page.click('text=Bỏ qua xem mẫu'); await page.fill('input[placeholder^="Tên nhóm"]', 'QA'); await page.click('text=Vào quảng trường'); await page.waitForTimeout(500); await page.evaluate(() => { document.exitPointerLock(); window.lva.player.touchLook.dx = 0; window.lva.player.touchLook.dy = 0; });
 if (process.env.NOTUT) await page.evaluate(() => { window.lva.tutorial.skip(); document.querySelectorAll('#ui .modal').forEach((m) => m.remove()); window.lva.session.beginTimer(); });

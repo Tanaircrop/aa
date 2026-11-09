@@ -112,3 +112,6 @@ table.keys { border-collapse: collapse; width: 100%; font-size: 13px; } table.ke
 #tutorial b { color: var(--yellow); } #tutorial .t-body { font-size: 14px; margin-top: 4px; }
 #tutorial .t-skip { font-size: 12px; padding: 4px 8px; }
 @media (max-width: 700px) { #tutorial { top: calc(56px + var(--safe-t)); left: 8px; right: 8px; transform: none; max-width: none; font-size: 13px; } }
+
+.brief { margin: 0; padding-left: 20px; } .brief li { margin: 4px 0; line-height: 1.45; }
+.brief-table { border-collapse: collapse; width: 100%; font-size: 13px; } .brief-table td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; } .brief-table td:last-child { white-space: nowrap; color: var(--yellow); } .brief-table tr:last-child td { border-bottom: none; }

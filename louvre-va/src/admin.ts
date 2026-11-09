@@ -1,7 +1,9 @@
 import './ui/styles.css';
 import { config, pools, smallPyramids, wings } from './data/config';
 import { CLOUD } from './net/cloud';
-import { el } from './ui/dom';
+import { el, download } from './ui/dom';
+import { awards, gradeGroup, toCSV, type GroupGrade, type PhotoGrade } from './gameplay/grading';
+import type { PhotoMeta, Stroke } from './gameplay/gallery';
 
 /**
  * Teacher dashboard: live top-down map of every device, results table, per-group photo browser.
@@ -39,6 +41,14 @@ function dashboard() {
   const table = el('div');
   const results = el('div', { class: 'panel', style: 'padding:14px' }, [el('h2', {}, ['Thiết bị và kết quả']), table]);
   const photosBox = el('div', { class: 'panel', style: 'padding:14px;grid-column:1 / -1' }, [el('h2', {}, ['Ảnh của nhóm']), el('p', { class: 'muted' }, ['Bấm một nhóm trong bảng để xem ảnh (kèm nét vẽ và ghi chú).'])]);
+  const gradeBody = el('div');
+  const gradeBtn = el('button', { class: 'primary' }, ['Chấm toàn bộ lớp']);
+  const csvBtn = el('button', {}, ['Tải CSV']); csvBtn.disabled = true;
+  const gradeBox = el('div', { class: 'panel', style: 'padding:14px;grid-column:1 / -1' }, [
+    el('div', { class: 'row', style: 'justify-content:space-between' }, [el('h2', { style: 'margin:0' }, ['Chấm điểm tự động']), el('div', { class: 'row' }, [gradeBtn, csvBtn])]),
+    el('p', { class: 'muted' }, ['Tải mọi ảnh của lớp, chiếu lại sống kim tự tháp và hai bờ hồ vào từng ảnh từ tư thế máy đã lưu, rồi so với nét A, nét V, chấm đỏ và câu ghi chú của nhóm. Điều kiện dự giải: 2 ảnh V+A ở 2 góc chuẩn khác nhau, mỗi ảnh vẽ đủ và có 1 câu. Nét xanh lá trong ảnh là nét chuẩn máy tính vẽ, nét đỏ là của nhóm.']),
+    gradeBody,
+  ]);
   const tools = el('div', { class: 'row', style: 'grid-column:1 / -1;justify-content:space-between' }, [
     el('h1', { style: 'margin:0;font-size:20px' }, ['Louvre V+A · Giảng viên']),
     el('div', { class: 'row' }, [
@@ -47,7 +57,7 @@ function dashboard() {
       (() => { const b = el('button', {}, ['Đăng xuất']); b.onclick = () => { sessionStorage.removeItem('lva.admin'); login(); }; return b; })(),
     ]),
   ]);
-  root.append(tools, live, results, photosBox);
+  root.append(tools, live, results, gradeBox, photosBox);
 
   let devices: Device[] = [], res: Result[] = [];
   const drawMap = () => {
@@ -118,6 +128,86 @@ function dashboard() {
       grid.append(el('div', {}, [cv, el('div', { class: 'muted', style: 'font-size:12px;margin-top:4px' }, [`${m.hasA && m.hasV ? 'V+A ' : m.hasA ? 'A ' : m.hasV ? 'V ' : ''}${'★'.repeat(m.stars ?? 1)} · ${m.focal} mm · ${m.aspect} · máy ${m.cameraHeight} m · ${m.label ?? ''}`]), el('div', { style: 'color:#ffd23f;font-size:13px' }, [p.note || '(chưa ghi chú)'])]));
     }
     photosBox.append(grid);
+  };
+  let graded: GroupGrade[] = [];
+  const runGrading = async () => {
+    gradeBtn.disabled = true; gradeBody.innerHTML = ''; gradeBody.append(el('p', { class: 'muted' }, ['Đang tải ảnh…']));
+    try {
+      const data = await api('action=all_photos') as { photos: { id: string; device_id: string; group_name: string; meta: PhotoMeta; strokes: Stroke[]; note: string; created_at: string; url: string | null }[] };
+      const byDevice = new Map<string, typeof data.photos>();
+      for (const p of data.photos) { if (!byDevice.has(p.device_id)) byDevice.set(p.device_id, []); byDevice.get(p.device_id)!.push(p); }
+      const resBy = new Map(res.map((r) => [r.device_id, r])); const devBy = new Map(devices.map((d) => [d.device_id, d]));
+      const ids = new Set([...byDevice.keys(), ...resBy.keys(), ...devBy.keys()]);
+      graded = [...ids].map((id) => {
+        const r = resBy.get(id), d = devBy.get(id), ph = byDevice.get(id) ?? [];
+        return gradeGroup({ device_id: id, group_name: r?.group_name || d?.group_name || ph[0]?.group_name || '', photos: ph, points: r?.points ?? d?.points ?? 0, discovered: r?.discovered ?? d?.discovered ?? 0, eggs: r?.eggs ?? d?.eggs ?? [], hint_used: !!r?.hint_used, answer: r?.answer ?? null, answer_correct: r?.answer_correct ?? null, finished_at: r?.finished_at ?? null });
+      });
+      const urlOf = new Map(data.photos.map((p) => [p.id, p.url]));
+      renderGrading(graded, urlOf); csvBtn.disabled = false;
+    } catch (e) { gradeBody.innerHTML = ''; gradeBody.append(el('p', { style: 'color:#ff3b30' }, ['Lỗi: ' + (e as Error).message])); }
+    gradeBtn.disabled = false;
+  };
+  gradeBtn.onclick = runGrading;
+  csvBtn.onclick = () => download(new Blob(['\ufeff' + toCSV(graded)], { type: 'text/csv;charset=utf-8' }), `louvre-va-cham-diem-${new Date().toISOString().slice(0, 10)}.csv`);
+  const renderGrading = (groups: GroupGrade[], urlOf: Map<string, string | null>) => {
+    gradeBody.innerHTML = '';
+    if (!groups.length) { gradeBody.append(el('p', { class: 'muted' }, ['Chưa có nhóm nào.'])); return; }
+    const w = awards(groups);
+    const name = (g: GroupGrade | null | undefined) => g ? g.group : '—';
+    const awardRows: [string, string, string][] = [
+      ['Nhất · Mắt kiến trúc', name(w.first), w.first ? `${w.first.points} điểm, ${w.first.cornersComplete.length} góc vẽ đủ${w.first.hint ? ', có dùng gợi ý' : ''}` : 'chưa nhóm nào đủ điều kiện'],
+      ['Nhì · Thợ săn góc', name(w.second), w.second ? `${w.second.cornersComplete.length} góc chuẩn vẽ đủ, không dùng gợi ý` : 'chưa có nhóm đủ điều kiện không dùng gợi ý'],
+      ['Ba · Người kể chuyện', w.storyteller.length ? 'giảng viên chọn' : '—', w.storyteller.slice(0, 3).map((s) => `${s.group.group}: “${s.photo.note.text.slice(0, 70)}”`).join(' · ') || 'chưa có câu giải thích đạt'],
+      ['Phụ · Tinh mắt', w.eyes.map((g) => g.group).join(', ') || '—', 'chụp được cả X và C'],
+      ['Phụ · Góc tranh luận', w.debate.map((g) => g.group).join(', ') || '—', 'ảnh V+A tại T1 / T2 vẽ đủ, giảng viên nghe lập luận'],
+      ['Phụ · Drone', w.drone.length ? [...new Set(w.drone.map((d) => d.group.group))].join(', ') : '—', `${w.drone.length} ảnh bay có V+A, cả lớp bình chọn`],
+    ];
+    const at = el('table', { class: 'keys' }); for (const [a, b, c] of awardRows) at.append(el('tr', {}, [el('td', {}, [el('b', {}, [a])]), el('td', { style: 'color:#ffd23f;font-weight:600' }, [b]), el('td', { class: 'muted' }, [c])]));
+    gradeBody.append(el('h3', { style: 'margin:8px 0 4px;font-size:15px' }, ['Đề xuất trao giải']), at);
+
+    const t = el('table', { class: 'keys', style: 'margin-top:10px' });
+    t.append(el('tr', { html: '<td><b>#</b></td><td><b>Nhóm</b></td><td><b>Điểm</b></td><td><b>Ảnh</b></td><td><b>V+A chuẩn</b></td><td><b>Góc</b></td><td><b>Vẽ đủ</b></td><td><b>3★</b></td><td><b>Egg</b></td><td><b>Gợi ý</b></td><td><b>Câu hỏi</b></td><td><b>Dự giải</b></td>' }));
+    w.ranking.forEach((g, i) => {
+      const tr = el('tr', { style: 'cursor:pointer' }, [
+        el('td', {}, [`${i + 1}`]), el('td', {}, [el('b', {}, [g.group]), el('div', { class: 'muted', style: 'font-size:11px' }, [g.device_id.slice(0, 8)])]),
+        el('td', {}, [`${g.points}`]), el('td', {}, [`${g.photos.length}`]), el('td', {}, [`${g.standardVA}`]), el('td', {}, [g.corners.join(' ') || '—']),
+        el('td', {}, [`${g.completeVA.length} (${g.cornersComplete.join(' ') || '—'})`]), el('td', {}, [`${g.threeStars}`]), el('td', {}, [g.eggs.join(' ') || '—']),
+        el('td', {}, [g.hint ? 'có' : 'không']), el('td', {}, [g.answer == null ? '—' : `${g.answer} ${g.answerCorrect ? '✓' : '✗'}`]),
+        el('td', { style: g.eligible ? 'color:#35d07f' : 'color:#ff3b30' }, [g.eligible ? 'đủ' : g.missing.join('; ')]),
+      ]);
+      tr.onclick = () => showGraded(g, urlOf);
+      t.append(tr);
+    });
+    gradeBody.append(el('h3', { style: 'margin:14px 0 4px;font-size:15px' }, ['Bảng xếp hạng (nhóm đủ điều kiện xếp trước, hoà điểm: không gợi ý, nhiều 3★, nộp sớm)']), t, el('p', { class: 'muted' }, ['Bấm một nhóm để xem phân tích từng ảnh.']));
+  };
+  const showGraded = (g: GroupGrade, urlOf: Map<string, string | null>) => {
+    photosBox.innerHTML = '';
+    photosBox.append(el('h2', {}, [`Phân tích ảnh của ${g.group} (${g.photos.length})`]), el('p', { class: 'muted' }, [g.eligible ? 'Đủ điều kiện dự giải.' : `Chưa đủ điều kiện: ${g.missing.join('; ')}.`, ' Nét xanh lá: sống kim tự tháp (liền) và bờ hồ (đứt) máy tính chiếu từ tư thế máy. Nét đỏ: nhóm vẽ.']));
+    const grid = el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px' });
+    for (const p of g.photos) grid.append(photoCard(p, urlOf.get(p.id) ?? null));
+    photosBox.append(grid); photosBox.scrollIntoView({ behavior: 'smooth' });
+  };
+  const photoCard = (p: PhotoGrade, url: string | null) => {
+    const cv = el('canvas', { style: 'width:100%;border-radius:8px;background:#000' });
+    const strokes = p.expected; const draw = (img?: HTMLImageElement) => {
+      const w = img?.width ?? 1200, h = img?.height ?? 800; cv.width = w; cv.height = h; const ctx = cv.getContext('2d')!;
+      if (img) ctx.drawImage(img, 0, 0); else { ctx.fillStyle = '#222'; ctx.fillRect(0, 0, w, h); }
+      ctx.save(); ctx.strokeStyle = '#35d07f'; ctx.lineWidth = Math.max(2, w / 400); ctx.lineCap = 'round';
+      for (const r of strokes.ridges) { ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(r[0][0] * w, r[0][1] * h); ctx.lineTo(r[1][0] * w, r[1][1] * h); ctx.stroke(); }
+      for (const e of strokes.edges) { ctx.setLineDash([w / 80, w / 120]); ctx.beginPath(); ctx.moveTo(e[0][0] * w, e[0][1] * h); ctx.lineTo(e[1][0] * w, e[1][1] * h); ctx.stroke(); }
+      if (strokes.tipUV) { ctx.fillStyle = '#35d07f'; ctx.beginPath(); ctx.arc(strokes.tipUV[0] * w, strokes.tipUV[1] * h, w / 150, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+      drawStrokes(ctx, p.strokes, w, h);
+    };
+    draw();
+    if (url) { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = url; img.onload = () => draw(img); }
+    const tag = (s: string) => el('span', { style: `display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;margin:2px 4px 2px 0;background:${s === 'đúng' ? 'rgba(53,208,127,.25)' : s === 'gần đúng' ? 'rgba(255,210,63,.25)' : 'rgba(255,59,48,.25)'}` }, [s]);
+    return el('div', {}, [cv,
+      el('div', { style: 'font-size:13px;margin-top:6px' }, [el('b', {}, [p.label ? `${p.label}` : p.cls === null ? 'Không ở mũi hồ' : 'Mũi hồ loại']), ` · ${p.va ? 'V+A' : p.hasA ? 'chỉ A' : p.hasV ? 'chỉ V' : 'chưa có V, A'} · ${'★'.repeat(p.stars)} · ${p.mode === 'fly' ? 'drone' : 'đi bộ'} · ${p.complete ? 'vẽ đủ' : 'chưa đủ'}`]),
+      el('div', {}, ['A ', tag(p.a.status), 'V ', tag(p.v.status), 'chấm ', tag(p.dot.status), 'ghi chú ', tag(p.note.status)]),
+      el('ul', { class: 'muted', style: 'margin:4px 0 0;padding-left:18px;font-size:12px' }, p.verdict.map((v) => el('li', {}, [v]))),
+      el('div', { style: 'color:#ffd23f;font-size:13px;margin-top:4px' }, [p.note.text || '(chưa ghi chú)']),
+    ]);
   };
   const refresh = async () => {
     try {

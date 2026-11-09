@@ -29,7 +29,54 @@ const sampleSvg = `<div style="position:relative;border-radius:10px;overflow:hid
 </div>
 <p class="muted" style="margin:6px 0 0">Ngoài V + A, trong quảng trường giấu 2 chủ thể có hình chữ X và chữ C (đúng bối cảnh Paris). Đưa chúng vào khung khi chụp là được cộng điểm; huy hiệu vàng trên khung ngắm sáng khi tìm thấy.</p>`;
 
-export function showIntro(opts: { teacher: boolean; onStart: (group: string) => void; onPreview: () => void }): HTMLElement {
+/** Assignment brief shown before the tutorial screen: context, mission, rules, scoring, awards. */
+export function showBrief(onNext: () => void): HTMLElement {
+  const total = config.session.durationMinutes;
+  const li = (items: string[]) => el('ol', { class: 'brief' }, items.map((t) => el('li', { html: t })));
+  const table = (rows: string[][]) => el('table', { class: 'brief-table' }, rows.map((r) => el('tr', {}, r.map((c) => el('td', { html: c })))));
+  const next = el('button', { class: 'primary' }, ['Đã rõ đề, xem hướng dẫn']);
+  const root = el('div', { class: 'modal' }, [el('div', { class: 'panel' }, [
+    el('p', { class: 'muted', style: 'margin:0 0 2px;letter-spacing:.08em;text-transform:uppercase;font-size:11px' }, ['Đề bài · bài tập nhóm · mỗi nhóm một thiết bị']),
+    el('h1', {}, ['Tìm chữ V và chữ A ở Cour Napoléon']),
+    el('p', {}, [`Nhóm đang đứng trong sân trước của Louvre. Hai sống nghiêng của kim tự tháp kính tạo thành chữ A. Hai bờ của 7 hồ tam giác chụm lại ở mũi hồ tạo thành chữ V khi đứng đúng chỗ, nhìn đúng hướng. Bài học: đường dẫn mắt, người xem ảnh đi theo đường nào và đường đó đưa mắt tới đâu.`]),
+    el('h2', {}, [`Nhiệm vụ · ${total} phút`]),
+    li([
+      'Tìm vị trí mà <b>cùng một khung hình</b> có cả A và V <b>hội tụ</b>: đáy kim tự tháp nằm gọn trong lòng V. Huy hiệu A và V trên khung ngắm sáng là đứng đúng.',
+      'Chụp <b>ít nhất 2 ảnh ở 2 góc khác nhau</b> thoả điều kiện trên.',
+      'Mở thư viện, <b>vẽ lên từng ảnh</b>: A nét liền đỏ, V hai nét đứt đỏ, một chấm đỏ ở đỉnh V (vị trí đặt chủ thể), ghi <b>1 câu</b>: đỉnh V dẫn mắt vào đâu, vì sao chọn tiêu cự và độ cao máy đó.',
+      'Hết giờ, trả lời: <b>trong sân có bao nhiêu góc hội tụ đủ cả V và A?</b>',
+      'Bấm <b>Xuất</b> trong thư viện để lưu trang tổng hợp. Ảnh tự lên bảng của giảng viên.',
+    ]),
+    el('h2', {}, ['Luật chơi']),
+    el('ul', { class: 'brief' }, [
+      el('li', {}, ['Một thiết bị một nhóm, một người cầm máy, cả nhóm cùng bàn. Nên đổi người cầm máy sau mỗi ảnh. Đổi thiết bị giữa chừng là mất kho ảnh.']),
+      el('li', {}, [`Phần hướng dẫn đầu không tính giờ. Đồng hồ ${total} phút chạy khi hướng dẫn kết thúc.`]),
+      el('li', {}, [`Một lượt Gợi ý sau phút thứ ${Math.round(config.session.hintAfterSeconds / 60)}: dịch chuyển tới một góc chuẩn, máy đặt sẵn, chỉ cần chụp. Vẫn có điểm nhưng xếp sau khi hoà điểm.`]),
+      el('li', {}, ['Được bay drone và dùng điểm nhìn cửa sổ; ảnh tự gắn nhãn. Không chụp hộ nhóm khác.']),
+    ]),
+    el('h2', {}, ['Điểm']),
+    table([
+      ['Chụp một ảnh', '+10'], ['Ảnh có chữ A / có chữ V', '+20 mỗi chữ'], ['Máy cân bằng · đỉnh ở 1/3 trên', '+5 mỗi mục'],
+      ['V + A tại góc chuẩn', '+30, lần đầu khám phá góc đó +50'], ['V + A tại góc tranh luận', '+15'],
+      ['Easter egg: chủ thể hình X hoặc C giấu trong sân', `+${config.easterEggs[0]?.bonus ?? 40} mỗi cái`], ['Vẽ đủ A, V, chấm đỏ và ghi 1 câu', '+15 mỗi ảnh'],
+      ['Trả lời đúng câu hỏi cuối', `+${config.finalQuestion.bonus}`],
+    ]),
+    el('h2', {}, ['Giải']),
+    table([
+      ['<b>Nhất · Mắt kiến trúc</b>', 'Tổng điểm cao nhất'], ['<b>Nhì · Thợ săn góc</b>', 'Nhiều góc chuẩn nhất, không dùng gợi ý'],
+      ['<b>Ba · Người kể chuyện</b>', 'Câu giải thích đỉnh V hay nhất, trình bày 1 phút'],
+      ['Phụ', 'Tinh mắt (cả X và C) · Góc tranh luận · Ảnh drone đẹp nhất'],
+    ]),
+    el('p', { class: 'muted' }, ['Điều kiện dự giải: ít nhất 2 ảnh V+A ở 2 góc khác nhau, mỗi ảnh vẽ đủ và có 1 câu. Hoà điểm: ưu tiên nhóm không dùng gợi ý, rồi nhiều ảnh 3 sao hơn, rồi nộp sớm hơn.']),
+    el('div', { class: 'row', style: 'margin-top:14px' }, [next]),
+  ])]);
+  ui().append(root);
+  next.onclick = () => { root.remove(); onNext(); };
+  return root;
+}
+
+export function showIntro(opts: { teacher: boolean; onStart: (group: string) => void; onPreview: () => void; brief?: boolean }): HTMLElement {
+  if (opts.brief !== false) return showBrief(() => showIntro({ ...opts, brief: false }));
   const total = config.session.durationMinutes;
   const input = el('input', { placeholder: 'Tên nhóm (vd: Nhóm 3)', maxlength: '32' });
   const prev = localStorage.getItem('lva.group'); if (prev) input.value = prev;
