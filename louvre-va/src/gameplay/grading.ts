@@ -142,15 +142,40 @@ export interface PhotoGrade {
   mode: string; stars: number; points: number;
   expected: Expected;
   strokes: Stroke[];
-  a: LineCheck & { count: number };
-  v: { count: number; checks: LineCheck[]; converge: Status; status: Status };
+  a: LineCheck & { count: number; matched: number };
+  v: { count: number; checks: LineCheck[]; matched: number; status: Status };
   dot: { count: number; status: Status; offset: number };
   note: { status: Status; text: string };
+  /** A and V traced on the real ridges and banks. The subject dot and the sentence are not required for this. */
+  drawnOk: boolean;
+  /** drawnOk plus the subject dot and one explanatory sentence, as the brief asks. */
   complete: boolean;
   verdict: string[];
 }
 
 const NOTE_WORDS = ['dẫn', 'mắt', 'hướng', 'nhìn', 'vào', 'tới', 'đến', 'tập trung', 'điểm', 'đỉnh'];
+const ok = (s: Status) => s === 'đúng' || s === 'gần đúng';
+const rank = (s: Status) => (s === 'đúng' ? 0 : s === 'gần đúng' ? 1 : s === 'lệch' ? 2 : 3);
+const worst = (a: Status, b: Status): Status => (rank(a) >= rank(b) ? a : b);
+const lineScore = (c: LineCheck) => c.angleErr / 10 + c.offset * 20;
+
+/** One-to-one greedy matching of the student's strokes to expected segments, best fit first. Stray strokes are ignored. */
+function assign(strokes: Stroke[], targets: [UV, UV][], aspect: number, max: number): { si: number; ti: number; check: LineCheck }[] {
+  const pairs: { si: number; ti: number; check: LineCheck; sc: number }[] = [];
+  strokes.forEach((s, si) => targets.forEach((t, ti) => { const c = checkLine(s, [t], aspect); pairs.push({ si, ti, check: { ...c, target: ti }, sc: lineScore(c) }); }));
+  pairs.sort((a, b) => a.sc - b.sc);
+  const us = new Set<number>(), ut = new Set<number>(); const out: { si: number; ti: number; check: LineCheck }[] = [];
+  for (const q of pairs) { if (us.has(q.si) || ut.has(q.ti)) continue; us.add(q.si); ut.add(q.ti); out.push(q); if (out.length >= max) break; }
+  return out;
+}
+
+/** Status from the best matched lines: both lines good -> the worse of the two; only one good line -> "gần đúng" at best. */
+function lineStatus(pairs: { check: LineCheck }[]): { status: Status; matched: number } {
+  const good = pairs.filter((q) => ok(q.check.status));
+  if (good.length >= 2) return { status: worst(good[0].check.status, good[1].check.status), matched: 2 };
+  if (good.length === 1) return { status: 'gần đúng', matched: 1 };
+  return { status: 'lệch', matched: 0 };
+}
 
 export function gradePhoto(p: { id: string; meta: PhotoMeta; strokes: Stroke[]; note: string }): PhotoGrade {
   const m = p.meta; const aspect = m.width / m.height;
@@ -162,26 +187,25 @@ export function gradePhoto(p: { id: string; meta: PhotoMeta; strokes: Stroke[]; 
   const Vs = strokes.filter((s) => s.tool === 'V' && s.pts.length >= 2);
   const dots = strokes.filter((s) => s.tool === 'dot' && s.pts.length);
   const verdict: string[] = [];
+  const maxErr = (pairs: { check: LineCheck }[]) => Math.max(0, ...pairs.filter((q) => ok(q.check.status)).map((q) => q.check.angleErr));
 
-  // A: best of the student's A strokes against the visible ridges
-  let a: LineCheck & { count: number } = { status: 'thiếu', angleErr: 90, offset: 1, target: -1, count: As.length };
-  for (const s of As) { const c = checkLine(s, exp.ridges, aspect); if (a.status === 'thiếu' || c.angleErr / 10 + c.offset * 20 < a.angleErr / 10 + a.offset * 20) a = { ...c, count: As.length }; }
-  if (!exp.ridges.length && As.length) a.status = 'lệch';
-  verdict.push(a.status === 'thiếu' ? 'Chưa vẽ nét A' : a.status === 'đúng' ? `Nét A bám đúng sống kim tự tháp (lệch ${a.angleErr.toFixed(0)}°)` : a.status === 'gần đúng' ? `Nét A gần sống kim tự tháp (lệch ${a.angleErr.toFixed(0)}°, cách ${(a.offset * 100).toFixed(0)}% khung)` : 'Nét A không trùng sống kim tự tháp');
+  // A: two strokes on two different ridges
+  const aPairs = assign(As, exp.ridges, aspect, 2);
+  const aRes = As.length && exp.ridges.length ? lineStatus(aPairs) : { status: (As.length ? 'lệch' : 'thiếu') as Status, matched: 0 };
+  const a: PhotoGrade['a'] = { status: aRes.status, angleErr: aPairs[0]?.check.angleErr ?? 90, offset: aPairs[0]?.check.offset ?? 1, target: aPairs[0]?.ti ?? -1, count: As.length, matched: aRes.matched };
+  verdict.push(a.status === 'thiếu' ? 'Chưa vẽ nét A'
+    : a.matched === 2 ? `Hai nét A ${a.status === 'đúng' ? 'bám đúng' : 'gần'} hai sống kim tự tháp (lệch tối đa ${maxErr(aPairs).toFixed(0)}°)`
+    : a.matched === 1 ? 'Một nét A bám sống kim tự tháp, nét còn lại lệch hoặc chưa vẽ'
+    : 'Nét A không trùng sống kim tự tháp');
 
-  // V: each dashed stroke against the two pool edges; two strokes should hit two different edges and converge at the tip
-  const checks = Vs.map((s) => checkLine(s, exp.edges, aspect));
-  const distinctEdges = new Set(checks.filter((c) => c.status !== 'lệch').map((c) => c.target)).size;
-  let converge: Status = 'thiếu';
-  if (Vs.length >= 2) {
-    const [s1, s2] = [Vs[0], Vs[1]].map((s) => ends(s).map((e) => H(e, aspect)) as [UV, UV]);
-    const x = intersect(s1[0], s1[1], s2[0], s2[1]);
-    if (!x) converge = 'lệch';
-    else if (exp.tipUV) { const d = Math.hypot(x[0] - exp.tipUV[0] * aspect, x[1] - exp.tipUV[1]); converge = d < 0.08 ? 'đúng' : d < 0.16 ? 'gần đúng' : 'lệch'; }
-    else converge = x[1] > 0.55 ? 'đúng' : 'lệch'; // tip under the camera: the lines must meet below the middle of the frame
-  }
-  const vStatus: Status = !Vs.length ? 'thiếu' : distinctEdges >= 2 && checks.every((c) => c.status === 'đúng') && converge !== 'lệch' ? 'đúng' : distinctEdges >= 2 && converge !== 'lệch' ? 'gần đúng' : 'lệch';
-  verdict.push(!Vs.length ? 'Chưa vẽ nét V' : Vs.length < 2 ? 'Chỉ có một nét V, cần hai bờ hồ' : vStatus === 'đúng' ? 'Hai nét V bám đúng hai bờ hồ và chụm về mũi hồ' : vStatus === 'gần đúng' ? 'Hai nét V theo hai bờ hồ, còn lệch nhẹ' : distinctEdges < 2 ? 'Hai nét V không bám hai bờ hồ khác nhau' : 'Hai nét V không chụm về mũi hồ');
+  // V: two strokes on the two pool banks that meet at the tip
+  const vPairs = assign(Vs, exp.edges, aspect, 2);
+  const vRes = Vs.length && exp.edges.length ? lineStatus(vPairs) : { status: (Vs.length ? 'lệch' : 'thiếu') as Status, matched: 0 };
+  verdict.push(!Vs.length ? 'Chưa vẽ nét V'
+    : !exp.tip ? 'Ảnh chụp xa mũi hồ, chưa có chữ V để so nét'
+    : vRes.matched === 2 ? `Hai nét V ${vRes.status === 'đúng' ? 'bám đúng' : 'gần'} hai bờ hồ (lệch tối đa ${maxErr(vPairs).toFixed(0)}°)`
+    : vRes.matched === 1 ? 'Một nét V bám bờ hồ, nét còn lại lệch hoặc chưa vẽ'
+    : 'Nét V không bám hai bờ hồ');
 
   // dot: inside the V wedge and close to the bisector
   let dot = { count: dots.length, status: 'thiếu' as Status, offset: 1 };
@@ -203,45 +227,113 @@ export function gradePhoto(p: { id: string; meta: PhotoMeta; strokes: Stroke[]; 
   const noteStatus: Status = !text ? 'thiếu' : text.length >= 12 && NOTE_WORDS.some((w) => text.toLowerCase().includes(w)) ? 'đúng' : 'gần đúng';
   verdict.push(noteStatus === 'thiếu' ? 'Chưa ghi câu giải thích' : noteStatus === 'đúng' ? 'Có câu giải thích đỉnh V dẫn mắt' : 'Ghi chú quá ngắn hoặc chưa nói V dẫn mắt vào đâu');
 
-  const ok = (s: Status) => s === 'đúng' || s === 'gần đúng';
-  const complete = ok(a.status) && ok(vStatus) && dot.status !== 'thiếu' && noteStatus !== 'thiếu';
-  return { id: p.id, label, cls: tip?.cls ?? null, hasA, hasV, va, standardVA, mode: m.mode, stars: m.stars ?? 1, points: m.points ?? 0, expected: exp, strokes, a, v: { count: Vs.length, checks, converge, status: vStatus }, dot, note: { status: noteStatus, text }, complete, verdict };
+  const drawnOk = ok(a.status) && ok(vRes.status);
+  const complete = drawnOk && dot.status !== 'thiếu' && noteStatus !== 'thiếu';
+  return { id: p.id, label, cls: tip?.cls ?? null, hasA, hasV, va, standardVA, mode: m.mode, stars: m.stars ?? 1, points: m.points ?? 0, expected: exp, strokes, a, v: { count: Vs.length, checks: vPairs.map((q) => q.check), matched: vRes.matched, status: vRes.status }, dot, note: { status: noteStatus, text }, drawnOk, complete, verdict };
+}
+
+// ---- groups: merge devices, re-score without the spam-able in-game counter
+
+/** "Nhóm 10", "nhóm 10", "10", "Nhom 10" -> "10". Default or empty names ("Nhóm", "nhóm?") -> null (cannot be attributed). */
+export function groupKey(raw: string): string | null {
+  const s = (raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^nhom/, '');
+  return s.length ? s : null;
 }
 
 export interface GroupInput {
   device_id: string; group_name: string;
   photos: { id: string; meta: PhotoMeta; strokes: Stroke[]; note: string; created_at?: string }[];
   points: number; discovered: number; eggs: string[]; hint_used: boolean; answer: number | null; answer_correct: boolean | null; finished_at: string | null;
+  /** true when the device sent a final result (hint_used is only known then) */
+  hint_known?: boolean;
+  /** how many physical devices were merged into this input */
+  devices?: number;
+  ids?: string[];
 }
+
+/** Merge several devices of one group. Unnamed devices stay separate unless the teacher assigned them a name (alias). */
+export function mergeDevices(inputs: GroupInput[], alias: Record<string, string> = {}): GroupInput[] {
+  const by = new Map<string, GroupInput[]>();
+  for (const g of inputs) {
+    const named = alias[g.device_id]?.trim() || g.group_name;
+    const k = groupKey(named);
+    const key = k ? `g:${k}` : `d:${g.device_id}`;
+    if (!by.has(key)) by.set(key, []);
+    by.get(key)!.push({ ...g, group_name: named });
+  }
+  return [...by.entries()].map(([key, list]) => {
+    const k = key.startsWith('g:') ? key.slice(2) : null;
+    const name = k && /^\d+$/.test(k) ? `Nhóm ${k}` : list[0].group_name || `Chưa đặt tên · ${list[0].device_id.slice(2, 8)}`;
+    const answered = list.filter((g) => g.answer != null);
+    const pick = answered.find((g) => g.answer_correct) ?? answered[0];
+    const fin = list.map((g) => g.finished_at).filter(Boolean).sort() as string[];
+    return {
+      device_id: list[0].device_id, ids: list.map((g) => g.device_id), devices: list.length, group_name: name,
+      photos: list.flatMap((g) => g.photos), points: Math.max(...list.map((g) => g.points)), discovered: Math.max(...list.map((g) => g.discovered)),
+      eggs: [...new Set(list.flatMap((g) => g.eggs || []))], hint_used: list.some((g) => g.hint_used), hint_known: list.some((g) => g.hint_known),
+      answer: pick?.answer ?? null, answer_correct: pick ? pick.answer_correct : null, finished_at: fin.length ? fin[fin.length - 1] : null,
+    };
+  });
+}
+
+export interface Fair { total: number; corners: number; debate: number; quality: number; explain: number; eggs: number; answer: number }
 
 export interface GroupGrade {
-  device_id: string; group: string;
+  device_id: string; ids: string[]; devices: number; group: string; unnamed: boolean;
   photos: PhotoGrade[];
-  vaPhotos: number; standardVA: number; corners: string[]; completeVA: PhotoGrade[]; cornersComplete: string[];
+  vaPhotos: number; standardVA: number; corners: string[]; debateCorners: string[]; completeVA: PhotoGrade[]; cornersComplete: string[];
   threeStars: number; dronePhotos: PhotoGrade[]; debatePhotos: PhotoGrade[];
-  points: number; eggs: string[]; hint: boolean; answer: number | null; answerCorrect: boolean; finished: string | null;
-  eligible: boolean; missing: string[];
+  /** score re-computed from distinct corners and drawing quality; repeated shots at one corner add nothing */
+  fair: Fair;
+  /** counter kept in the game, repeated shots inflate it; for reference only */
+  points: number; eggs: string[]; hint: boolean; hintKnown: boolean; answer: number | null; answerCorrect: boolean; finished: string | null;
+  eligible: boolean; missing: string[]; flags: string[];
 }
 
-export function gradeGroup(g: GroupInput): GroupGrade {
+export interface GradeOptions {
+  /** true: a photo counts as drawn only with A, V, the subject dot and a sentence (the brief). false: A and V traced correctly is enough. */
+  strict?: boolean;
+}
+
+const qLine = (s: Status) => (s === 'đúng' ? 15 : s === 'gần đúng' ? 8 : 0);
+const qDot = (s: Status) => (s === 'đúng' ? 5 : s === 'gần đúng' ? 3 : 0);
+const qNote = (s: Status) => (s === 'đúng' ? 10 : s === 'gần đúng' ? 5 : 0);
+
+export function gradeGroup(g: GroupInput, opts: GradeOptions = {}): GroupGrade {
+  const strict = !!opts.strict;
   const photos = g.photos.map(gradePhoto);
   const va = photos.filter((p) => p.va);
   const std = photos.filter((p) => p.standardVA);
-  const corners = [...new Set(std.map((p) => p.label!))];
-  const completeVA = std.filter((p) => p.complete);
-  const cornersComplete = [...new Set(completeVA.map((p) => p.label!))];
+  const readyOf = (p: PhotoGrade) => (strict ? p.complete : p.drawnOk);
+  const corners = [...new Set(std.map((p) => p.label!))].sort();
+  const debateCorners = [...new Set(photos.filter((p) => p.va && p.cls === 'debate' && p.label).map((p) => p.label!))].sort();
+  const completeVA = std.filter(readyOf);
+  const cornersComplete = [...new Set(completeVA.map((p) => p.label!))].sort();
   const missing: string[] = [];
+  const need = strict ? 'vẽ đủ A, V, chấm và ghi chú' : 'vẽ đúng nét A và V';
   if (std.length < 2) missing.push(`mới ${std.length}/2 ảnh V+A ở góc chuẩn`);
   else if (corners.length < 2) missing.push('2 ảnh V+A nhưng cùng một góc');
-  if (std.length >= 2 && completeVA.length < 2) missing.push(`mới ${completeVA.length}/2 ảnh V+A vẽ đủ A, V, chấm và ghi chú`);
-  else if (completeVA.length >= 2 && cornersComplete.length < 2) missing.push('ảnh vẽ đủ chưa ở 2 góc khác nhau');
+  if (std.length >= 2 && cornersComplete.length < 2) missing.push(`mới ${cornersComplete.length}/2 góc chuẩn có ảnh ${need}`);
+
+  // fair score: per distinct corner, best photo counts
+  const bestAt = (label: string) => photos.filter((p) => p.va && p.label === label).sort((a, b) => (qLine(b.a.status) + qLine(b.v.status) + qDot(b.dot.status) + qNote(b.note.status)) - (qLine(a.a.status) + qLine(a.v.status) + qDot(a.dot.status) + qNote(a.note.status)))[0];
+  let quality = 0, explain = 0;
+  for (const label of [...corners, ...debateCorners]) { const b = bestAt(label); if (!b) continue; quality += qLine(b.a.status) + qLine(b.v.status); explain += qDot(b.dot.status) + qNote(b.note.status); }
+  const eggs = [...new Set(g.eggs || [])];
+  const fair: Fair = { corners: 100 * corners.length, debate: 30 * debateCorners.length, quality, explain, eggs: 40 * Math.min(2, eggs.length), answer: g.answer_correct ? config.finalQuestion.bonus : 0, total: 0 };
+  fair.total = fair.corners + fair.debate + fair.quality + fair.explain + fair.eggs + fair.answer;
+
+  const flags: string[] = [];
+  if (photos.length >= 40 && va.length / photos.length < 0.2) flags.push(`${photos.length} ảnh nhưng chỉ ${va.length} ảnh có V+A: nghi chụp hàng loạt để cộng điểm`);
+  if (g.points >= 500 && g.points > fair.total * 3) flags.push(`Điểm game ${g.points} cao gấp hơn 3 lần điểm chấm lại ${fair.total}: chụp lặp một góc hoặc chụp bừa`);
+  if (va.length >= 10 && corners.length <= 2) flags.push(`${va.length} ảnh V+A nhưng chỉ ${corners.length} góc khác nhau`);
   return {
-    device_id: g.device_id, group: g.group_name || g.device_id.slice(0, 6), photos,
-    vaPhotos: va.length, standardVA: std.length, corners, completeVA, cornersComplete,
+    device_id: g.device_id, ids: g.ids ?? [g.device_id], devices: g.devices ?? 1, group: g.group_name || `Chưa đặt tên · ${g.device_id.slice(2, 8)}`, unnamed: !groupKey(g.group_name),
+    photos, vaPhotos: va.length, standardVA: std.length, corners, debateCorners, completeVA, cornersComplete,
     threeStars: photos.filter((p) => p.stars >= 3).length,
     dronePhotos: va.filter((p) => p.mode === 'fly'), debatePhotos: photos.filter((p) => p.va && p.cls === 'debate'),
-    points: g.points, eggs: g.eggs || [], hint: !!g.hint_used, answer: g.answer, answerCorrect: !!g.answer_correct, finished: g.finished_at,
-    eligible: missing.length === 0, missing,
+    fair, points: g.points, eggs, hint: !!g.hint_used, hintKnown: !!g.hint_known, answer: g.answer, answerCorrect: !!g.answer_correct, finished: g.finished_at,
+    eligible: missing.length === 0, missing, flags,
   };
 }
 
@@ -260,20 +352,20 @@ export interface Awards {
 }
 
 export function awards(groups: GroupGrade[]): Awards {
-  const ranking = [...groups].sort((a, b) => (a.eligible !== b.eligible ? (a.eligible ? -1 : 1) : b.points - a.points || tieBreak(a, b)));
+  const ranking = [...groups].sort((a, b) => (a.eligible !== b.eligible ? (a.eligible ? -1 : 1) : b.fair.total - a.fair.total || tieBreak(a, b)));
   const eligible = ranking.filter((g) => g.eligible);
   const first = eligible[0] ?? null;
-  const second = eligible.filter((g) => g !== first && !g.hint).sort((a, b) => b.cornersComplete.length - a.cornersComplete.length || tieBreak(a, b))[0] ?? null;
+  const second = eligible.filter((g) => g !== first && !g.hint).sort((a, b) => b.cornersComplete.length - a.cornersComplete.length || b.fair.total - a.fair.total || tieBreak(a, b))[0] ?? null;
   const eyes = groups.filter((g) => g.eggs.includes('X') && g.eggs.includes('C'));
-  const storyteller = groups.flatMap((g) => g.completeVA.filter((p) => p.note.status === 'đúng').map((p) => ({ group: g, photo: p }))).sort((a, b) => b.photo.note.text.length - a.photo.note.text.length).slice(0, 8);
-  const debate = groups.filter((g) => g.debatePhotos.some((p) => p.complete));
+  const storyteller = groups.flatMap((g) => g.photos.filter((p) => p.va && p.note.status === 'đúng' && p.drawnOk).map((p) => ({ group: g, photo: p }))).sort((a, b) => b.photo.note.text.length - a.photo.note.text.length).slice(0, 8);
+  const debate = groups.filter((g) => g.debatePhotos.some((p) => p.drawnOk));
   const drone = groups.flatMap((g) => g.dronePhotos.map((p) => ({ group: g, photo: p })));
   return { first, second, eyes, storyteller, debate, drone, ranking };
 }
 
 export function toCSV(groups: GroupGrade[]): string {
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const head = ['Nhóm', 'Thiết bị', 'Điểm', 'Ảnh', 'Ảnh V+A', 'V+A góc chuẩn', 'Góc', 'Ảnh vẽ đủ', 'Góc vẽ đủ', 'Ảnh 3 sao', 'Egg', 'Gợi ý', 'Câu hỏi', 'Đủ điều kiện', 'Còn thiếu', 'Nộp lúc'];
-  const rows = groups.map((g) => [g.group, g.device_id, g.points, g.photos.length, g.vaPhotos, g.standardVA, g.corners.join(' '), g.completeVA.length, g.cornersComplete.join(' '), g.threeStars, g.eggs.join(' '), g.hint ? 'có' : 'không', g.answer == null ? '' : `${g.answer}${g.answerCorrect ? ' đúng' : ' sai'}`, g.eligible ? 'có' : 'không', g.missing.join('; '), g.finished ?? ''].map(esc).join(','));
+  const head = ['Nhóm', 'Số máy', 'Điểm chấm lại', 'Điểm game (tham khảo)', 'Ảnh', 'Ảnh V+A', 'Góc chuẩn có V+A', 'Số góc chuẩn', 'Góc tranh luận', 'Góc chuẩn vẽ đúng', 'Egg', 'Gợi ý', 'Câu hỏi', 'Đủ điều kiện', 'Còn thiếu', 'Cảnh báo', 'Nộp lúc', 'Mã thiết bị'];
+  const rows = groups.map((g) => [g.group, g.devices, g.fair.total, g.points, g.photos.length, g.vaPhotos, g.corners.join(' '), g.corners.length, g.debateCorners.join(' '), g.cornersComplete.join(' '), g.eggs.join(' '), g.hintKnown ? (g.hint ? 'có' : 'không') : 'chưa rõ', g.answer == null ? '' : `${g.answer}${g.answerCorrect ? ' đúng' : ' sai'}`, g.eligible ? 'có' : 'không', g.missing.join('; '), g.flags.join('; '), g.finished ?? '', g.ids.join(' ')].map(esc).join(','));
   return [head.map(esc).join(','), ...rows].join('\n');
 }

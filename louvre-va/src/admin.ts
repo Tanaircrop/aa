@@ -2,7 +2,7 @@ import './ui/styles.css';
 import { config, pools, smallPyramids, wings } from './data/config';
 import { CLOUD } from './net/cloud';
 import { el, download } from './ui/dom';
-import { awards, gradeGroup, toCSV, type GroupGrade, type PhotoGrade } from './gameplay/grading';
+import { awards, gradeGroup, mergeDevices, toCSV, type GroupGrade, type GroupInput, type PhotoGrade } from './gameplay/grading';
 import type { PhotoMeta, Stroke } from './gameplay/gallery';
 
 /**
@@ -44,9 +44,12 @@ function dashboard() {
   const gradeBody = el('div');
   const gradeBtn = el('button', { class: 'primary' }, ['Chấm toàn bộ lớp']);
   const csvBtn = el('button', {}, ['Tải CSV']); csvBtn.disabled = true;
+  const sinceSel = el('select', {}, [['3', '3 giờ gần nhất'], ['8', '8 giờ gần nhất'], ['24', '24 giờ gần nhất'], ['0', 'Tất cả (gồm cả buổi thử)']].map(([v, t]) => { const o = el('option', { value: v }, [t]); if (v === '8') o.selected = true; return o; })) as HTMLSelectElement;
+  const strictBox = el('input', { type: 'checkbox' }) as HTMLInputElement;
   const gradeBox = el('div', { class: 'panel', style: 'padding:14px;grid-column:1 / -1' }, [
-    el('div', { class: 'row', style: 'justify-content:space-between' }, [el('h2', { style: 'margin:0' }, ['Chấm điểm tự động']), el('div', { class: 'row' }, [gradeBtn, csvBtn])]),
-    el('p', { class: 'muted' }, ['Tải mọi ảnh của lớp, chiếu lại sống kim tự tháp và hai bờ hồ vào từng ảnh từ tư thế máy đã lưu, rồi so với nét A, nét V, chấm đỏ và câu ghi chú của nhóm. Điều kiện dự giải: 2 ảnh V+A ở 2 góc chuẩn khác nhau, mỗi ảnh vẽ đủ và có 1 câu. Nét xanh lá trong ảnh là nét chuẩn máy tính vẽ, nét đỏ là của nhóm.']),
+    el('div', { class: 'row', style: 'justify-content:space-between' }, [el('h2', { style: 'margin:0' }, ['Chấm điểm tự động']), el('div', { class: 'row' }, [sinceSel, gradeBtn, csvBtn])]),
+    el('p', { class: 'muted' }, ['Tải mọi ảnh của lớp, chiếu lại sống kim tự tháp và hai bờ hồ vào từng ảnh từ tư thế máy đã lưu, so với nét A, nét V, chấm đỏ và câu ghi chú của nhóm. Nét xanh lá trong ảnh là nét chuẩn máy tính vẽ, nét đỏ là của nhóm. Các máy cùng tên nhóm (không phân biệt hoa thường, "Nhóm 10" = "nhóm 10" = "10") được gộp làm một. Máy để tên mặc định "Nhóm" không biết thuộc nhóm nào: gõ tên nhóm vào ô trong bảng để gộp.']),
+    el('label', { class: 'muted', style: 'display:flex;gap:8px;align-items:flex-start;margin:6px 0' }, [strictBox, el('span', {}, ['Bắt buộc chấm đỏ chủ thể và câu ghi chú trên ảnh mới tính là vẽ đủ (đúng như đề). Bỏ chọn: chỉ cần hai nét A và hai nét V bám đúng sống kim tự tháp và bờ hồ.'])]),
     gradeBody,
   ]);
   const tools = el('div', { class: 'row', style: 'grid-column:1 / -1;justify-content:space-between' }, [
@@ -130,20 +133,33 @@ function dashboard() {
     photosBox.append(grid);
   };
   let graded: GroupGrade[] = [];
+  let cache: { inputs: GroupInput[]; urlOf: Map<string, string | null> } | null = null;
+  const ALIAS = 'lva.alias';
+  const loadAlias = (): Record<string, string> => { try { return JSON.parse(localStorage.getItem(ALIAS) || '{}'); } catch { return {}; } };
+  const saveAlias = (id: string, name: string) => { const a = loadAlias(); if (name.trim()) a[id] = name.trim(); else delete a[id]; try { localStorage.setItem(ALIAS, JSON.stringify(a)); } catch { /* ignore */ } };
+  const compute = () => {
+    if (!cache) return;
+    const merged = mergeDevices(cache.inputs, loadAlias());
+    graded = merged.map((g) => gradeGroup(g, { strict: strictBox.checked }));
+    renderGrading(graded, cache.urlOf); csvBtn.disabled = false;
+  };
+  strictBox.onchange = compute;
   const runGrading = async () => {
     gradeBtn.disabled = true; gradeBody.innerHTML = ''; gradeBody.append(el('p', { class: 'muted' }, ['Đang tải ảnh…']));
     try {
       const data = await api('action=all_photos') as { photos: { id: string; device_id: string; group_name: string; meta: PhotoMeta; strokes: Stroke[]; note: string; created_at: string; url: string | null }[] };
+      const hours = Number(sinceSel.value); const cutoff = hours ? Date.now() - hours * 3600_000 : 0;
+      const fresh = (t?: string | null) => !cutoff || (t ? new Date(t).getTime() >= cutoff : false);
       const byDevice = new Map<string, typeof data.photos>();
-      for (const p of data.photos) { if (!byDevice.has(p.device_id)) byDevice.set(p.device_id, []); byDevice.get(p.device_id)!.push(p); }
-      const resBy = new Map(res.map((r) => [r.device_id, r])); const devBy = new Map(devices.map((d) => [d.device_id, d]));
+      for (const p of data.photos) { if (!fresh(p.created_at)) continue; if (!byDevice.has(p.device_id)) byDevice.set(p.device_id, []); byDevice.get(p.device_id)!.push(p); }
+      const resBy = new Map(res.filter((r) => fresh(r.finished_at)).map((r) => [r.device_id, r])); const devBy = new Map(devices.filter((d) => fresh(d.updated_at)).map((d) => [d.device_id, d]));
       const ids = new Set([...byDevice.keys(), ...resBy.keys(), ...devBy.keys()]);
-      graded = [...ids].map((id) => {
+      const inputs: GroupInput[] = [...ids].map((id) => {
         const r = resBy.get(id), d = devBy.get(id), ph = byDevice.get(id) ?? [];
-        return gradeGroup({ device_id: id, group_name: r?.group_name || d?.group_name || ph[0]?.group_name || '', photos: ph, points: r?.points ?? d?.points ?? 0, discovered: r?.discovered ?? d?.discovered ?? 0, eggs: r?.eggs ?? d?.eggs ?? [], hint_used: !!r?.hint_used, answer: r?.answer ?? null, answer_correct: r?.answer_correct ?? null, finished_at: r?.finished_at ?? null });
-      });
-      const urlOf = new Map(data.photos.map((p) => [p.id, p.url]));
-      renderGrading(graded, urlOf); csvBtn.disabled = false;
+        return { device_id: id, group_name: r?.group_name || d?.group_name || ph[0]?.group_name || '', photos: ph, points: r?.points ?? d?.points ?? 0, discovered: r?.discovered ?? d?.discovered ?? 0, eggs: r?.eggs ?? d?.eggs ?? [], hint_used: !!r?.hint_used, hint_known: !!r, answer: r?.answer ?? null, answer_correct: r?.answer_correct ?? null, finished_at: r?.finished_at ?? null };
+      }).filter((g) => g.photos.length > 0 || g.points > 0); // a phone that only opened the page is not a group
+      cache = { inputs, urlOf: new Map(data.photos.map((p) => [p.id, p.url])) };
+      compute();
     } catch (e) { gradeBody.innerHTML = ''; gradeBody.append(el('p', { style: 'color:#ff3b30' }, ['Lỗi: ' + (e as Error).message])); }
     gradeBtn.disabled = false;
   };
@@ -151,38 +167,48 @@ function dashboard() {
   csvBtn.onclick = () => download(new Blob(['\ufeff' + toCSV(graded)], { type: 'text/csv;charset=utf-8' }), `louvre-va-cham-diem-${new Date().toISOString().slice(0, 10)}.csv`);
   const renderGrading = (groups: GroupGrade[], urlOf: Map<string, string | null>) => {
     gradeBody.innerHTML = '';
-    if (!groups.length) { gradeBody.append(el('p', { class: 'muted' }, ['Chưa có nhóm nào.'])); return; }
+    if (!groups.length) { gradeBody.append(el('p', { class: 'muted' }, ['Chưa có nhóm nào trong khoảng thời gian đã chọn.'])); return; }
     const w = awards(groups);
     const name = (g: GroupGrade | null | undefined) => g ? g.group : '—';
     const awardRows: [string, string, string][] = [
-      ['Nhất · Mắt kiến trúc', name(w.first), w.first ? `${w.first.points} điểm, ${w.first.cornersComplete.length} góc vẽ đủ${w.first.hint ? ', có dùng gợi ý' : ''}` : 'chưa nhóm nào đủ điều kiện'],
-      ['Nhì · Thợ săn góc', name(w.second), w.second ? `${w.second.cornersComplete.length} góc chuẩn vẽ đủ, không dùng gợi ý` : 'chưa có nhóm đủ điều kiện không dùng gợi ý'],
-      ['Ba · Người kể chuyện', w.storyteller.length ? 'giảng viên chọn' : '—', w.storyteller.slice(0, 3).map((s) => `${s.group.group}: “${s.photo.note.text.slice(0, 70)}”`).join(' · ') || 'chưa có câu giải thích đạt'],
+      ['Nhất · Mắt kiến trúc', name(w.first), w.first ? `${w.first.fair.total} điểm chấm lại, ${w.first.corners.length}/5 góc chuẩn, ${w.first.cornersComplete.length} góc có nét vẽ đúng${w.first.hint ? ', có dùng gợi ý' : ''}` : 'chưa nhóm nào đủ điều kiện'],
+      ['Nhì · Thợ săn góc', name(w.second), w.second ? `${w.second.cornersComplete.length} góc chuẩn có nét vẽ đúng, không dùng gợi ý` : 'chưa có nhóm đủ điều kiện không dùng gợi ý (gợi ý chỉ biết với máy đã nộp câu hỏi cuối)'],
+      ['Ba · Người kể chuyện', w.storyteller.length ? 'giảng viên chọn' : '—', w.storyteller.slice(0, 3).map((x) => `${x.group.group}: “${x.photo.note.text.slice(0, 70)}”`).join(' · ') || 'chưa có câu giải thích đạt'],
       ['Phụ · Tinh mắt', w.eyes.map((g) => g.group).join(', ') || '—', 'chụp được cả X và C'],
-      ['Phụ · Góc tranh luận', w.debate.map((g) => g.group).join(', ') || '—', 'ảnh V+A tại T1 / T2 vẽ đủ, giảng viên nghe lập luận'],
+      ['Phụ · Góc tranh luận', w.debate.map((g) => g.group).join(', ') || '—', 'ảnh V+A tại T1 / T2 vẽ đúng, giảng viên nghe lập luận'],
       ['Phụ · Drone', w.drone.length ? [...new Set(w.drone.map((d) => d.group.group))].join(', ') : '—', `${w.drone.length} ảnh bay có V+A, cả lớp bình chọn`],
     ];
     const at = el('table', { class: 'keys' }); for (const [a, b, c] of awardRows) at.append(el('tr', {}, [el('td', {}, [el('b', {}, [a])]), el('td', { style: 'color:#ffd23f;font-weight:600' }, [b]), el('td', { class: 'muted' }, [c])]));
     gradeBody.append(el('h3', { style: 'margin:8px 0 4px;font-size:15px' }, ['Đề xuất trao giải']), at);
 
     const t = el('table', { class: 'keys', style: 'margin-top:10px' });
-    t.append(el('tr', { html: '<td><b>#</b></td><td><b>Nhóm</b></td><td><b>Điểm</b></td><td><b>Ảnh</b></td><td><b>V+A chuẩn</b></td><td><b>Góc</b></td><td><b>Vẽ đủ</b></td><td><b>3★</b></td><td><b>Egg</b></td><td><b>Gợi ý</b></td><td><b>Câu hỏi</b></td><td><b>Dự giải</b></td>' }));
+    t.append(el('tr', { html: '<td><b>#</b></td><td><b>Nhóm</b></td><td><b>Điểm chấm lại</b></td><td><b>Điểm game</b></td><td><b>Ảnh</b></td><td><b>Góc chuẩn có V+A</b></td><td><b>Nét vẽ đúng</b></td><td><b>Egg</b></td><td><b>Gợi ý</b></td><td><b>Câu hỏi</b></td><td><b>Dự giải</b></td>' }));
     w.ranking.forEach((g, i) => {
+      const nameCell = el('td', {}, [el('b', {}, [g.group]), el('div', { class: 'muted', style: 'font-size:11px' }, [`${g.devices} máy · ${g.ids.map((x) => x.slice(2, 8)).join(' ')}`])]);
+      if (g.unnamed) {
+        const inp = el('input', { placeholder: 'gõ tên nhóm để gộp, vd 10', style: 'width:150px;margin-top:4px;font-size:12px', title: 'Máy này để tên mặc định. Gõ tên nhóm thật rồi nhấn Enter.' }) as HTMLInputElement;
+        inp.onclick = (e) => e.stopPropagation();
+        inp.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') { saveAlias(g.device_id, inp.value); compute(); } };
+        nameCell.append(inp);
+      }
       const tr = el('tr', { style: 'cursor:pointer' }, [
-        el('td', {}, [`${i + 1}`]), el('td', {}, [el('b', {}, [g.group]), el('div', { class: 'muted', style: 'font-size:11px' }, [g.device_id.slice(0, 8)])]),
-        el('td', {}, [`${g.points}`]), el('td', {}, [`${g.photos.length}`]), el('td', {}, [`${g.standardVA}`]), el('td', {}, [g.corners.join(' ') || '—']),
-        el('td', {}, [`${g.completeVA.length} (${g.cornersComplete.join(' ') || '—'})`]), el('td', {}, [`${g.threeStars}`]), el('td', {}, [g.eggs.join(' ') || '—']),
-        el('td', {}, [g.hint ? 'có' : 'không']), el('td', {}, [g.answer == null ? '—' : `${g.answer} ${g.answerCorrect ? '✓' : '✗'}`]),
+        el('td', {}, [`${i + 1}`]), nameCell,
+        el('td', { style: 'font-weight:700;color:#ffd23f' }, [`${g.fair.total}`]), el('td', { class: 'muted' }, [`${g.points}`]), el('td', {}, [`${g.photos.length}`]),
+        el('td', {}, [`${g.corners.length}/5 ${g.corners.map((c) => c.replace('Góc ', '')).join(' ')}${g.debateCorners.length ? ' · ' + g.debateCorners.join(' ') : ''}`]),
+        el('td', {}, [`${g.cornersComplete.length} (${g.cornersComplete.map((c) => c.replace('Góc ', '')).join(' ') || '—'})`]), el('td', {}, [g.eggs.join(' ') || '—']),
+        el('td', {}, [g.hintKnown ? (g.hint ? 'có' : 'không') : 'chưa rõ']), el('td', {}, [g.answer == null ? '—' : `${g.answer} ${g.answerCorrect ? '✓' : '✗'}`]),
         el('td', { style: g.eligible ? 'color:#35d07f' : 'color:#ff3b30' }, [g.eligible ? 'đủ' : g.missing.join('; ')]),
       ]);
       tr.onclick = () => showGraded(g, urlOf);
       t.append(tr);
+      if (g.flags.length) t.append(el('tr', {}, [el('td'), el('td', { colspan: '10', style: 'color:#ff9f0a;font-size:12px' }, ['⚠ ' + g.flags.join(' · ')])]));
     });
-    gradeBody.append(el('h3', { style: 'margin:14px 0 4px;font-size:15px' }, ['Bảng xếp hạng (nhóm đủ điều kiện xếp trước, hoà điểm: không gợi ý, nhiều 3★, nộp sớm)']), t, el('p', { class: 'muted' }, ['Bấm một nhóm để xem phân tích từng ảnh.']));
+    gradeBody.append(el('h3', { style: 'margin:14px 0 4px;font-size:15px' }, ['Bảng xếp hạng theo điểm chấm lại']), t,
+      el('p', { class: 'muted' }, ['Điểm chấm lại = 100 mỗi góc chuẩn có ảnh V+A (tối đa 5) + 30 mỗi góc tranh luận + nét vẽ đúng (tối đa 30 mỗi góc) + chấm đỏ và câu ghi chú (tối đa 15 mỗi góc) + 40 mỗi Easter egg + 100 nếu trả lời đúng câu cuối. Chụp lặp một góc không cộng thêm. Điểm game là bộ đếm cũ trong máy, chụp nhiều là tăng nên chỉ để tham khảo. Hoà điểm: không dùng gợi ý, nhiều ảnh 3 sao, nộp sớm. Bấm một nhóm để xem phân tích từng ảnh.']));
   };
   const showGraded = (g: GroupGrade, urlOf: Map<string, string | null>) => {
     photosBox.innerHTML = '';
-    photosBox.append(el('h2', {}, [`Phân tích ảnh của ${g.group} (${g.photos.length})`]), el('p', { class: 'muted' }, [g.eligible ? 'Đủ điều kiện dự giải.' : `Chưa đủ điều kiện: ${g.missing.join('; ')}.`, ' Nét xanh lá: sống kim tự tháp (liền) và bờ hồ (đứt) máy tính chiếu từ tư thế máy. Nét đỏ: nhóm vẽ.']));
+    photosBox.append(el('h2', {}, [`Phân tích ảnh của ${g.group} (${g.photos.length}, ${g.devices} máy)`]), el('p', { class: 'muted' }, [g.eligible ? 'Đủ điều kiện dự giải.' : `Chưa đủ điều kiện: ${g.missing.join('; ')}.`, ' Nét xanh lá: sống kim tự tháp (liền) và bờ hồ (đứt) máy tính chiếu từ tư thế máy. Nét đỏ: nhóm vẽ.']));
     const grid = el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px' });
     for (const p of g.photos) grid.append(photoCard(p, urlOf.get(p.id) ?? null));
     photosBox.append(grid); photosBox.scrollIntoView({ behavior: 'smooth' });
@@ -203,7 +229,7 @@ function dashboard() {
     if (url) { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = url; img.onload = () => draw(img); }
     const tag = (s: string) => el('span', { style: `display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;margin:2px 4px 2px 0;background:${s === 'đúng' ? 'rgba(53,208,127,.25)' : s === 'gần đúng' ? 'rgba(255,210,63,.25)' : 'rgba(255,59,48,.25)'}` }, [s]);
     return el('div', {}, [cv,
-      el('div', { style: 'font-size:13px;margin-top:6px' }, [el('b', {}, [p.label ? `${p.label}` : p.cls === null ? 'Không ở mũi hồ' : 'Mũi hồ loại']), ` · ${p.va ? 'V+A' : p.hasA ? 'chỉ A' : p.hasV ? 'chỉ V' : 'chưa có V, A'} · ${'★'.repeat(p.stars)} · ${p.mode === 'fly' ? 'drone' : 'đi bộ'} · ${p.complete ? 'vẽ đủ' : 'chưa đủ'}`]),
+      el('div', { style: 'font-size:13px;margin-top:6px' }, [el('b', {}, [p.label ? `${p.label}` : p.cls === null ? 'Không ở mũi hồ' : 'Mũi hồ loại']), ` · ${p.va ? 'V+A' : p.hasA ? 'chỉ A' : p.hasV ? 'chỉ V' : 'chưa có V, A'} · ${'★'.repeat(p.stars)} · ${p.mode === 'fly' ? 'drone' : 'đi bộ'} · ${p.complete ? 'vẽ đủ' : p.drawnOk ? 'A, V đúng' : 'chưa đủ'}`]),
       el('div', {}, ['A ', tag(p.a.status), 'V ', tag(p.v.status), 'chấm ', tag(p.dot.status), 'ghi chú ', tag(p.note.status)]),
       el('ul', { class: 'muted', style: 'margin:4px 0 0;padding-left:18px;font-size:12px' }, p.verdict.map((v) => el('li', {}, [v]))),
       el('div', { style: 'color:#ffd23f;font-size:13px;margin-top:4px' }, [p.note.text || '(chưa ghi chú)']),

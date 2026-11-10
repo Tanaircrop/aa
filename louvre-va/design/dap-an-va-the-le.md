@@ -100,14 +100,49 @@ Sao mỗi ảnh: 3 sao từ 80 điểm, 2 sao từ 45, còn lại 1 sao. Ảnh c
 
 ## 8. Chấm điểm tự động trên dashboard
 
-Nút **Chấm toàn bộ lớp** trong `/admin.html` tải mọi ảnh của lớp (action `all_photos`) và chạy `src/gameplay/grading.ts`:
+Nút **Chấm toàn bộ lớp** trong `/admin.html` tải mọi ảnh của lớp (action `all_photos`) và chạy `src/gameplay/grading.ts`. Thiết kế này rút ra từ buổi chạy thật đầu tiên (35 thiết bị, hơn 600 ảnh), xem mục 8.4.
 
-1. Từ tư thế máy lưu trong metadata ảnh (vị trí, hướng la bàn, độ cao máy, góc ngẩng, tiêu cự, tỷ lệ), chiếu lại sống kim tự tháp (đỉnh tới 4 góc đáy) và hai bờ hồ của mũi hồ nhóm đang đứng vào toạ độ ảnh, cùng mô hình camera với game. Nét xanh lá hiện đè lên ảnh để giảng viên đối chiếu bằng mắt.
-2. So nét của nhóm: nét A liền so với sống kim tự tháp gần nhất (sai góc dưới 7° và lệch dưới 3,5 % chiều cao khung là **đúng**, dưới 14° và 7 % là **gần đúng**); hai nét V đứt phải bám hai bờ hồ khác nhau và giao nhau tại mũi hồ (hoặc dưới nửa khung khi mũi hồ nằm dưới máy); chấm đỏ phải nằm trong lòng V và cách trục phân giác dưới 8 %; câu ghi chú dài từ 12 ký tự và có từ chỉ hướng nhìn (dẫn, mắt, vào, tới...).
-3. Ảnh **vẽ đủ** khi A và V đạt đúng hoặc gần đúng, có chấm và có câu. Nhóm **đủ điều kiện dự giải** khi có 2 ảnh V+A vẽ đủ tại 2 góc chuẩn khác nhau.
-4. Bảng xếp hạng: nhóm đủ điều kiện xếp trước, theo điểm, hoà điểm theo mục 7. Đề xuất giải Nhất, Nhì, Tinh mắt tự động; giải Người kể chuyện liệt kê 3 câu ghi chú dài nhất để giảng viên chọn; giải Góc tranh luận và Drone liệt kê nhóm có ảnh phù hợp. Nút **Tải CSV** xuất bảng.
+### 8.1 Nhận diện ảnh và nét vẽ
 
-Ảnh minh hoạ nét chiếu khớp với ảnh chụp trong game: `production/qa/evidence/admin-cham-diem.png`. Test: `tests/grading.test.ts`.
+1. Từ tư thế máy lưu trong metadata ảnh (vị trí, hướng la bàn, độ cao máy, góc ngẩng, tiêu cự, tỷ lệ), chiếu lại sống kim tự tháp (đỉnh tới 4 góc đáy) và hai bờ hồ của mũi hồ nhóm đang đứng vào toạ độ ảnh, cùng mô hình camera với game. Nét xanh lá hiện đè lên ảnh để giảng viên đối chiếu bằng mắt. Trên 31 ảnh thật có nét vẽ, nét A đúng lệch 0 đến 3° so với nét chiếu lại, chứng tỏ phép chiếu khớp với game.
+2. So từng nét của nhóm với nét chuẩn, ghép từng nét vào một sống hoặc một bờ hồ (nét thừa bị bỏ qua):
+   - **A**: hai nét liền, mỗi nét một sống kim tự tháp. Mỗi nét sai góc dưới 7° và lệch dưới 3,5 % chiều cao khung là **đúng**, dưới 14° và 7 % là **gần đúng**. Chỉ một nét khớp thì cả A là **gần đúng** tối đa.
+   - **V**: hai nét đứt, mỗi nét một bờ hồ của mũi hồ đang đứng, cùng ngưỡng như A. Ảnh chụp xa mũi hồ không có bờ để so.
+   - **Chấm đỏ** nằm trong lòng V và cách trục phân giác dưới 8 % thì đúng.
+   - **Câu ghi chú** từ 12 ký tự và có từ chỉ hướng nhìn (dẫn, mắt, vào, tới...).
+3. Một ảnh **vẽ đúng** khi A và V đạt. Một ảnh **vẽ đủ** khi vẽ đúng và có chấm đỏ và có câu ghi chú. Ô chọn "Bắt buộc chấm đỏ và câu ghi chú" quyết định dùng mức nào để xét điều kiện dự giải (mặc định bỏ chọn, xem 8.4).
+
+### 8.2 Gộp máy và điểm chấm lại
+
+- Các máy cùng tên nhóm được gộp (không phân biệt hoa thường, dấu, "Nhóm 10" = "nhóm 10" = "10"). Máy để tên mặc định "Nhóm" không biết thuộc nhóm nào: giảng viên gõ tên nhóm vào ô ngay trong bảng để gộp (lưu trên trình duyệt giảng viên).
+- Bộ lọc thời gian (mặc định 8 giờ gần nhất) loại ảnh của buổi thử hôm trước.
+- **Điểm chấm lại**, chỉ tính góc khác nhau, chụp lặp một góc không cộng thêm:
+
+| Hạng mục | Điểm |
+|---|---|
+| Mỗi góc chuẩn có ảnh V+A (tối đa 5) | 100 |
+| Mỗi góc tranh luận có ảnh V+A (tối đa 2) | 30 |
+| Nét vẽ trên ảnh tốt nhất của mỗi góc: A, V đúng 15 mỗi nét, gần đúng 8 | tối đa 30 mỗi góc |
+| Chấm đỏ (5, gần đúng 3) và câu ghi chú (10, gần đúng 5) của ảnh tốt nhất mỗi góc | tối đa 15 mỗi góc |
+| Easter egg X, C (gộp các máy của nhóm) | 40 mỗi cái |
+| Trả lời đúng câu cuối | 100 |
+
+Điểm game trong máy vẫn hiển thị để tham khảo nhưng không dùng xếp hạng.
+
+### 8.3 Điều kiện dự giải, xếp hạng, giải
+
+- Đủ điều kiện: có ảnh V+A ở ít nhất 2 góc chuẩn khác nhau, mỗi góc có ảnh vẽ đúng (hoặc vẽ đủ khi chọn chế độ chặt).
+- Xếp hạng: nhóm đủ điều kiện trước, rồi theo điểm chấm lại, hoà điểm theo mục 7. Đề xuất giải Nhất, Nhì, Tinh mắt tự động; Người kể chuyện liệt kê 3 câu ghi chú dài nhất; Góc tranh luận và Drone liệt kê ứng viên. Nút **Tải CSV** xuất bảng.
+- Cảnh báo tự động: nhiều ảnh nhưng ít V+A (chụp hàng loạt), điểm game cao gấp hơn 3 lần điểm chấm lại, nhiều ảnh V+A cùng 1 hoặc 2 góc.
+- Việc dùng Gợi ý chỉ biết với máy đã nộp câu hỏi cuối; các máy khác hiện "chưa rõ" và được coi là không dùng.
+
+### 8.4 Bài học từ buổi chạy thật
+
+- Điểm game bị thổi phồng: một máy chụp rồi xoá 275 ảnh được 10 010 điểm với 0 ảnh V+A; một nhóm chụp lặp 26 ảnh ở 3 góc được 2 560 điểm. Vì vậy xếp hạng theo điểm chấm lại.
+- Mỗi nhóm có nhiều máy, tên gõ khác nhau ("Nhóm 10", "nhóm 10"), nhiều máy để tên mặc định. Vì vậy gộp theo tên và cho gán tay.
+- Chỉ khoảng 30 trong hơn 600 ảnh có nét vẽ, 6 ảnh có câu ghi chú, 5 ảnh có chấm đỏ. Đòi chấm đỏ và câu ghi chú thì không nhóm nào đủ điều kiện, nên chế độ mặc định chỉ đòi A và V đúng; chấm đỏ và câu ghi chú vẫn được điểm và dùng xét giải Người kể chuyện.
+
+Test: `tests/grading.test.ts`. Ảnh minh hoạ: `production/qa/evidence/admin-cham-diem.png`, `production/qa/evidence/admin-cham-lai.png`.
 
 ## 9. Ảnh tham chiếu
 

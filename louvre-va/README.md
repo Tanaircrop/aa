@@ -113,5 +113,5 @@ Dữ liệu mặt bằng © OpenStreetMap contributors (ODbL). Kim tự tháp Lo
 
 - Đề bài cho học viên (mỗi nhóm một thiết bị): `design/de-bai.md`; trong game hiện ở màn hình đầu tiên trước phần hướng dẫn.
 - Đáp án, thể lệ, cách chấm tự động: `design/dap-an-va-the-le.md`.
-- Dashboard `/admin.html` có nút **Chấm toàn bộ lớp**: chiếu lại sống kim tự tháp và bờ hồ vào từng ảnh từ tư thế máy, so với nét A, V, chấm đỏ và câu ghi chú của nhóm, xếp hạng và đề xuất giải, xuất CSV. Logic ở `src/gameplay/grading.ts`, test ở `tests/grading.test.ts`.
+- Dashboard `/admin.html` có nút **Chấm toàn bộ lớp**: gộp các máy cùng tên nhóm, chiếu lại sống kim tự tháp và bờ hồ vào từng ảnh từ tư thế máy, so với nét A, V, chấm đỏ và câu ghi chú của nhóm, tính điểm chấm lại theo số góc khác nhau (không bị chụp lặp thổi phồng), cảnh báo chụp hàng loạt, xếp hạng và đề xuất giải, xuất CSV. Logic ở `src/gameplay/grading.ts`, test ở `tests/grading.test.ts`.
 - Mã nguồn edge function: `supabase/functions/lva-admin/`.
