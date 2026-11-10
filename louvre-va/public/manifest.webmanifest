@@ -1,0 +1,10 @@
+{
+  "name": "Louvre V+A Photo Game",
+  "short_name": "Louvre V+A",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "icons": [{ "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%230d0f12'/%3E%3Cpath d='M96 28 L170 160 H22 Z' fill='none' stroke='%23e8c07a' stroke-width='12'/%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml" }]
+}

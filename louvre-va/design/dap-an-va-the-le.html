@@ -1,0 +1,285 @@
+<title>Đáp án V+A Cour Napoléon</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column (68ch) for rules, a 2-up card grid for the seven corners, full-width plan drawing. */
+:root {
+  --bg: #eef0f3; --surface: #ffffff; --fg: #1b2430; --muted: #5a6572; --line: #d4d9e0;
+  --accent: #9a6b12; --green: #1f8a4c; --green-soft: #dff3e6; --amber: #b57a00; --amber-soft: #fbefcf; --grey-soft: #e6e9ee; --map-bg: #f7f8fa;
+  --display: "Fraunces", "Times New Roman", Georgia, serif; --body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #141920; --surface: #1c232c; --fg: #e8ecf1; --muted: #9aa6b4; --line: #2d3742; --accent: #e0b25a; --green: #46c27a; --green-soft: #173626; --amber: #e5b04a; --amber-soft: #3b2e10; --grey-soft: #242c36; --map-bg: #1c232c; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #141920; --surface: #1c232c; --fg: #e8ecf1; --muted: #9aa6b4; --line: #2d3742; --accent: #e0b25a; --green: #46c27a; --green-soft: #173626; --amber: #e5b04a; --amber-soft: #3b2e10; --grey-soft: #242c36; --map-bg: #1c232c; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 48px); font-weight: 700; }
+h2 { font-size: clamp(22px, 3vw, 30px); font-weight: 600; margin-block: 44px 14px; }
+h3 { font-size: 19px; font-weight: 600; }
+p, li, dd, dt, td, th { font-size: 15.5px; }
+.lede { max-width: 68ch; color: var(--muted); font-size: 17px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: center; }
+.hero img { width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+.facts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-width: 120px; }
+.fact b { display: block; font-family: var(--display); font-size: 28px; line-height: 1; }
+.fact.green b { color: var(--green); } .fact.amber b { color: var(--amber); } .fact span { color: var(--muted); font-size: 13px; }
+.prose { max-width: 68ch; }
+.prose li { margin-block: 6px; }
+.map { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; overflow-x: auto; }
+.map svg { display: block; width: 100%; height: auto; min-width: 560px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.corner { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.corner img { width: 100%; aspect-ratio: 12 / 7; object-fit: cover; display: block; }
+.corner-body { padding: 14px 16px 16px; display: grid; gap: 10px; }
+.corner-head { display: flex; align-items: center; gap: 10px; }
+.num { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--green); color: #fff; font-weight: 700; font-family: var(--mono); }
+.num.amber { background: var(--amber); color: #1b1300; }
+dl { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin: 0; }
+dl div { display: grid; gap: 2px; } dt { color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; } dd { margin: 0; font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; }
+.corner p { margin: 0; color: var(--muted); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--grey-soft); }
+tr:last-child td { border-bottom: 0; }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.award { display: grid; grid-template-columns: 170px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.award:last-child { border-bottom: 0; }
+.award .name { font-family: var(--display); font-size: 20px; font-weight: 600; }
+.award .how { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.callout { background: var(--green-soft); border-left: 4px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; max-width: 68ch; }
+.callout.amber { background: var(--amber-soft); border-color: var(--amber); }
+.links a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 13.5px; background: var(--grey-soft); padding: 1px 6px; border-radius: 4px; }
+footer { margin-top: 48px; color: var(--muted); font-size: 13px; }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .award { grid-template-columns: 1fr; gap: 4px; } dl { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .corner img { transition: transform .4s ease; } .corner:hover img { transform: scale(1.02); } }
+</style>
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Louvre V+A Photo Game · tài liệu giảng viên</div>
+      <h1>Đáp án đầy đủ 21 mũi hồ và thể lệ trao thưởng</h1>
+      <p class="lede">Mặt bằng hồ lấy từ OpenStreetMap, luật tính và bảng dưới do test tự động của game sinh ra. Ảnh tham chiếu chụp từ chính game ở tư thế máy đáp án, cùng bố cục học viên sẽ thấy.</p>
+      <div class="facts">
+        <div class="fact green"><b>5</b><span>góc chuẩn V + A</span></div>
+        <div class="fact amber"><b>2</b><span>góc tranh luận</span></div>
+        <div class="fact"><b>14</b><span>mũi bị loại</span></div>
+        <div class="fact"><b>15′</b><span>thời lượng bài</span></div>
+      </div>
+    </div>
+    <img src="../production/qa/answers/tong-quan.png" alt="Toàn cảnh Cour Napoléon trong game nhìn từ 55 m">
+  </header>
+
+  <h2>Luật tính</h2>
+  <div class="prose">
+    <ul>
+      <li><b>V</b> là hai bờ hồ chụm lại ở một mũi hồ. <b>A</b> là kim tự tháp lớn, hai sống nghiêng.</li>
+      <li>Một mũi <b>đạt chuẩn</b> khi đứng tại mũi, nhìn theo đường phân giác của góc hồ, cả đáy kim tự tháp nằm trọn trong lòng V (bốn góc đáy đều trong góc mở của V, dung sai 1,5°).</li>
+      <li>Mũi <b>tranh luận</b> khi chỉ một nửa kim tự tháp nằm trong V, một góc đáy nằm đúng trên cạnh V.</li>
+      <li>Mũi <b>bị loại</b> khi chạm góc đáy kim tự tháp, khi V mở sang ngang, hoặc khi kim tự tháp ở sau lưng.</li>
+    </ul>
+    <div class="callout">Câu hỏi cuối bài trong game: <b>có bao nhiêu góc hội tụ đủ cả V và A?</b> Đáp án <b>5</b>, cộng 100 điểm.</div>
+  </div>
+
+  <h2>Sơ đồ 21 mũi hồ</h2>
+  <div class="map"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" font-family="sans-serif">
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker></defs>
+<rect width="900" height="720" fill="var(--map-bg)"/>
+<text x="24" y="36" font-size="22" font-weight="700" fill="var(--fg)">Sơ đồ 21 mũi hồ Cour Napoléon (toạ độ OpenStreetMap, x đông, y bắc, gốc tâm kim tự tháp)</text>
+<rect x="-492.0" y="-532.8000000000001" width="1533.6000000000001" height="302.40000000000003" fill="#d9cdb3"/>
+<rect x="-492.0" y="950.4" width="1533.6000000000001" height="302.40000000000003" fill="#d9cdb3"/>
+<rect x="1041.6" y="-230.39999999999998" width="259.2" height="1180.8" fill="#d9cdb3"/>
+<rect x="-2630.4" y="-475.20000000000005" width="1922.4" height="244.8" fill="#d9cdb3"/>
+<rect x="-2630.4" y="950.4" width="1922.4" height="244.8" fill="#d9cdb3"/>
+<polygon points="348.24,227.52 482.88,101.51999999999998 614.64,230.4" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="614.64,230.4 742.0799999999999,362.16 610.32,490.32000000000005" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="610.32,490.32000000000005 479.28,617.76 347.52,490.32000000000005" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="751.44,344.16 495.84,89.27999999999997 753.6,94.32" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="492.24,630.0 751.44,380.16 747.84,631.44" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="469.92,88.55999999999995 336.72,214.56 214.32,84.24000000000001" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="467.04,630.72 206.39999999999998,627.84 333.84000000000003,502.56" fill="#9cc7e4" stroke="#4e86a8" stroke-width="2"/>
+<polygon points="348.24,227.52 614.64,230.4 610.32,490.32000000000005 347.52,490.32000000000005" fill="#fff" fill-opacity=".7" stroke="#b8860b" stroke-width="3"/>
+<line x1="348.24" y1="227.52" x2="480.18" y2="359.64" stroke="#b8860b" stroke-width="1.5"/>
+<line x1="614.64" y1="230.4" x2="480.18" y2="359.64" stroke="#b8860b" stroke-width="1.5"/>
+<line x1="610.32" y1="490.32000000000005" x2="480.18" y2="359.64" stroke="#b8860b" stroke-width="1.5"/>
+<line x1="347.52" y1="490.32000000000005" x2="480.18" y2="359.64" stroke="#b8860b" stroke-width="1.5"/>
+<rect x="458.04" y="5.4000000000000306" width="56.88" height="56.88" fill="none" stroke="#b8860b" stroke-width="2" transform="rotate(45 486.48 33.84000000000003)"/>
+<rect x="783.48" y="333.72" width="56.88" height="56.88" fill="none" stroke="#b8860b" stroke-width="2" transform="rotate(45 811.9200000000001 362.16)"/>
+<rect x="450.84" y="657.7199999999999" width="56.88" height="56.88" fill="none" stroke="#b8860b" stroke-width="2" transform="rotate(45 479.28 686.16)"/>
+<circle cx="742.0799999999999" cy="362.16" r="13" fill="#2e9e5b" stroke="#fff" stroke-width="2"/>
+<text x="742.0799999999999" y="367.16" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">2</text>
+<line x1="742.0799999999999" y1="362.16" x2="708.0841944956235" y2="361.6259512113981" stroke="#2e9e5b" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="753.6" cy="94.32" r="13" fill="#2e9e5b" stroke="#fff" stroke-width="2"/>
+<text x="753.6" y="99.32" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">4</text>
+<line x1="753.6" y1="94.32" x2="729.2250393398836" y2="118.02361349705518" stroke="#2e9e5b" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="482.88" cy="101.51999999999998" r="13" fill="#2e9e5b" stroke="#fff" stroke-width="2"/>
+<text x="482.88" y="106.51999999999998" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">1</text>
+<line x1="482.88" y1="101.51999999999998" x2="482.52395934004767" y2="135.51813575842738" stroke="#2e9e5b" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="747.84" cy="631.44" r="13" fill="#2e9e5b" stroke="#fff" stroke-width="2"/>
+<text x="747.84" y="636.44" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">5</text>
+<line x1="747.84" y1="631.44" x2="724.0514464225456" y2="607.1479288924847" stroke="#2e9e5b" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="479.28" cy="617.76" r="13" fill="#2e9e5b" stroke="#fff" stroke-width="2"/>
+<text x="479.28" y="622.76" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">3</text>
+<line x1="479.28" y1="617.76" x2="479.22065883555945" y2="583.7600517849482" stroke="#2e9e5b" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="214.32" cy="84.24000000000001" r="13" fill="#e0a800" stroke="#fff" stroke-width="2"/>
+<text x="214.32" y="89.24000000000001" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">T1</text>
+<line x1="214.32" y1="84.24000000000001" x2="245.40463447796498" y2="98.01481395051533" stroke="#e0a800" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="206.39999999999998" cy="627.84" r="13" fill="#e0a800" stroke="#fff" stroke-width="2"/>
+<text x="206.39999999999998" y="632.84" font-size="14" font-weight="700" text-anchor="middle" fill="#fff">T2</text>
+<line x1="206.39999999999998" y1="627.84" x2="237.94643263256324" y2="615.1584153924225" stroke="#e0a800" stroke-width="3" marker-end="url(#ar)"/>
+<circle cx="614.64" cy="230.4" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="610.32" cy="490.32000000000005" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="751.44" cy="344.16" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="495.84" cy="89.27999999999997" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="469.92" cy="88.55999999999995" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="336.72" cy="214.56" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="348.24" cy="227.52" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="614.64" cy="230.4" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="492.24" cy="630.0" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="751.44" cy="380.16" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="467.04" cy="630.72" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="333.84000000000003" cy="502.56" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="610.32" cy="490.32000000000005" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="347.52" cy="490.32000000000005" r="6" fill="#9a9a9a" stroke="#fff" stroke-width="2"/>
+<circle cx="40" cy="624" r="9" fill="#2e9e5b"/><text x="58" y="629" font-size="15" fill="var(--fg)">5 góc chuẩn: đáy kim tự tháp nằm trọn trong lòng V (mũi 90°, nhìn theo phân giác)</text>
+<circle cx="40" cy="650" r="9" fill="#e0a800"/><text x="58" y="655" font-size="15" fill="var(--fg)">2 góc tranh luận T1, T2: kim tự tháp chỉ nằm một nửa trong V (mũi 45° ngoài của hồ nửa)</text>
+<circle cx="40" cy="676" r="9" fill="#9a9a9a"/><text x="58" y="681" font-size="15" fill="var(--fg)">14 mũi bị loại: 6 chạm góc đáy, 6 mở sang ngang, 2 góc vuông hồ nửa quay lưng</text>
+<text x="24" y="708" font-size="12" fill="var(--muted)">Richelieu ở trên (bắc), Denon dưới (nam), Sully phải (đông). Mũi tên = hướng nhìn. © OpenStreetMap contributors (ODbL).</text>
+</svg></div>
+
+  <h2>Năm góc chuẩn</h2>
+  <div class="grid"><article class="corner">
+  <img src="../production/qa/answers/goc-1.png" alt="Khung ngắm trong game tại góc 1: hai bờ hồ chụm thành V, kim tự tháp thành A" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num">1</span><h3>Hồ trong bắc</h3></div>
+    <dl>
+      <div><dt>Toạ độ</dt><dd>(0.4, 35.9) m</dd></div>
+      <div><dt>Mũi hồ</dt><dd>93°</dd></div>
+      <div><dt>Hướng</dt><dd>181° · nhìn về nam</dd></div>
+      <div><dt>Tiêu cự</dt><dd>16-20 mm · máy 0,5-1 m</dd></div>
+    </dl>
+    <p>Chính diện, đối xứng. Kim tự tháp nhỏ N ngay sau lưng, chỉ lùi được 2-3 m nên cần góc rộng để lấy trọn đáy.</p>
+  </div>
+</article><article class="corner">
+  <img src="../production/qa/answers/goc-2.png" alt="Khung ngắm trong game tại góc 2: hai bờ hồ chụm thành V, kim tự tháp thành A" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num">2</span><h3>Hồ trong đông</h3></div>
+    <dl>
+      <div><dt>Toạ độ</dt><dd>(36.4, -0.3) m</dd></div>
+      <div><dt>Mũi hồ</dt><dd>90°</dd></div>
+      <div><dt>Hướng</dt><dd>271° · nhìn về tây, hậu cảnh Arc du Carrousel</dd></div>
+      <div><dt>Tiêu cự</dt><dd>16-20 mm · máy 0,5-1 m</dd></div>
+    </dl>
+    <p>Chính diện, đối xứng, Arc du Carrousel và Louis XIV làm hậu cảnh phía xa.</p>
+  </div>
+</article><article class="corner">
+  <img src="../production/qa/answers/goc-3.png" alt="Khung ngắm trong game tại góc 3: hai bờ hồ chụm thành V, kim tự tháp thành A" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num">3</span><h3>Hồ trong nam</h3></div>
+    <dl>
+      <div><dt>Toạ độ</dt><dd>(-0.1, -35.8) m</dd></div>
+      <div><dt>Mũi hồ</dt><dd>92°</dd></div>
+      <div><dt>Hướng</dt><dd>360° · nhìn về bắc</dd></div>
+      <div><dt>Tiêu cự</dt><dd>16-20 mm · máy 0,5-1 m</dd></div>
+    </dl>
+    <p>Chính diện, đối xứng; buổi chiều mặt trời chếch trái, mặt kính sáng.</p>
+  </div>
+</article><article class="corner">
+  <img src="../production/qa/answers/goc-4.png" alt="Khung ngắm trong game tại góc 4: hai bờ hồ chụm thành V, kim tự tháp thành A" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num">4</span><h3>Hồ góc đông bắc</h3></div>
+    <dl>
+      <div><dt>Toạ độ</dt><dd>(38.0, 36.9) m</dd></div>
+      <div><dt>Mũi hồ</dt><dd>91°</dd></div>
+      <div><dt>Hướng</dt><dd>226° · nhìn chéo tây nam</dd></div>
+      <div><dt>Tiêu cự</dt><dd>24-35 mm · máy 1-1,6 m</dd></div>
+    </dl>
+    <p>Chéo, sống kim tự tháp ở giữa khung. Từ trên cao chỉ thấy một góc vuông; phải đứng sát mép mới thành V.</p>
+  </div>
+</article><article class="corner">
+  <img src="../production/qa/answers/goc-5.png" alt="Khung ngắm trong game tại góc 5: hai bờ hồ chụm thành V, kim tự tháp thành A" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num">5</span><h3>Hồ góc đông nam</h3></div>
+    <dl>
+      <div><dt>Toạ độ</dt><dd>(37.2, -37.7) m</dd></div>
+      <div><dt>Mũi hồ</dt><dd>90°</dd></div>
+      <div><dt>Hướng</dt><dd>316° · nhìn chéo tây bắc</dd></div>
+      <div><dt>Tiêu cự</dt><dd>24-35 mm · máy 1-1,6 m</dd></div>
+    </dl>
+    <p>Chéo, sống kim tự tháp ở giữa khung. Góc hay bị bỏ sót nhất.</p>
+  </div>
+</article></div>
+  <p class="prose" style="margin-top:14px">Góc 1, 2, 3 ở đỉnh hồ trong: kim tự tháp nhỏ ngay sau lưng, chỉ lùi được 2-3 m, nên cần 16 mm để lấy trọn đáy. Góc 4, 5 là góc vuông của hồ góc: từ trên cao chỉ thấy một góc vuông, phải đứng sát mép nhìn chéo vào kim tự tháp mới thành V. Đây là điểm dạy khi chữa bài.</p>
+
+  <h2>Hai góc tranh luận</h2>
+  <div class="grid"><article class="corner debate">
+  <img src="../production/qa/answers/goc-T1.png" alt="Khung ngắm tại góc tranh luận T1" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num amber">T1</span><h3>Hồ nửa tây bắc, mũi ngoài 46°</h3></div>
+    <dl><div><dt>Toạ độ</dt><dd>(-36.9, 38.3) m</dd></div><div><dt>Hướng</dt><dd>114° · nhìn về đông nam</dd></div></dl>
+    <p>Kim tự tháp chỉ nằm một nửa trong lòng V: 3 trên 4 góc đáy ở trong, một góc nằm đúng trên cạnh V. Chấp nhận nếu nhóm lập luận được vì sao vẫn đọc ra V.</p>
+  </div>
+</article><article class="corner debate">
+  <img src="../production/qa/answers/goc-T2.png" alt="Khung ngắm tại góc tranh luận T2" loading="lazy">
+  <div class="corner-body">
+    <div class="corner-head"><span class="num amber">T2</span><h3>Hồ nửa tây nam, mũi ngoài 45°</h3></div>
+    <dl><div><dt>Toạ độ</dt><dd>(-38.0, -37.2) m</dd></div><div><dt>Hướng</dt><dd>68° · nhìn về đông bắc</dd></div></dl>
+    <p>Kim tự tháp chỉ nằm một nửa trong lòng V: 3 trên 4 góc đáy ở trong, một góc nằm đúng trên cạnh V. Chấp nhận nếu nhóm lập luận được vì sao vẫn đọc ra V.</p>
+  </div>
+</article></div>
+  <div class="callout amber" style="margin-top:14px">Thêm <b>V phối cảnh</b>: hai dãy nhà Richelieu và Denon hội tụ về Arc du Carrousel khi nhìn về tây. Có V nhưng không phải V của hồ; chấp nhận nếu nhóm lập luận tốt, không tính là góc chuẩn.</div>
+
+  <h2>Mười bốn mũi bị loại</h2>
+  <div class="tablewrap"><table><thead><tr><th>Vị trí (x, y) m</th><th>Mũi hồ</th><th>Góc</th><th>Lý do</th></tr></thead><tbody><tr><td>(18.7, 18.0)</td><td>Hồ trong đông</td><td>45°</td><td>Mũi hồ chạm góc đáy kim tự tháp, kim tự tháp thành một cạnh của V</td></tr><tr><td>(18.1, -18.1)</td><td>Hồ trong đông</td><td>45°</td><td>Mũi hồ chạm góc đáy kim tự tháp, kim tự tháp thành một cạnh của V</td></tr><tr><td>(37.7, 2.2)</td><td>Hồ góc đông bắc</td><td>46°</td><td>V mở sang ngang hoặc ra ngoài, không chứa kim tự tháp</td></tr><tr><td>(2.2, 37.6)</td><td>Hồ góc đông bắc</td><td>44°</td><td>V mở sang ngang hoặc ra ngoài, không chứa kim tự tháp</td></tr><tr><td>(-1.4, 37.7)</td><td>Hồ nửa tây bắc</td><td>44°</td><td>V mở sang ngang hoặc ra ngoài, không chứa kim tự tháp</td></tr><tr><td>(-19.9, 20.2)</td><td>Hồ nửa tây bắc</td><td>90°</td><td>Kim tự tháp ở sau lưng hoặc ngoài lòng V</td></tr><tr><td>(-18.3, 18.4)</td><td>Hồ trong bắc</td><td>44°</td><td>Mũi hồ chạm góc đáy kim tự tháp, kim tự tháp thành một cạnh của V</td></tr><tr><td>(18.7, 18.0)</td><td>Hồ trong bắc</td><td>44°</td><td>Mũi hồ chạm góc đáy kim tự tháp, kim tự tháp thành một cạnh của V</td></tr><tr><td>(1.7, -37.5)</td><td>Hồ góc đông nam</td><td>44°</td><td>V mở sang ngang hoặc ra ngoài, không chứa kim tự tháp</td></tr><tr><td>(37.7, -2.8)</td><td>Hồ góc đông nam</td><td>45°</td><td>V mở sang ngang hoặc ra ngoài, không chứa kim tự tháp</td></tr><tr><td>(-1.8, -37.6)</td><td>Hồ nửa tây nam</td><td>43°</td><td>V mở sang ngang hoặc ra ngoài, không chứa kim tự tháp</td></tr><tr><td>(-20.3, -19.8)</td><td>Hồ nửa tây nam</td><td>92°</td><td>Kim tự tháp ở sau lưng hoặc ngoài lòng V</td></tr><tr><td>(18.1, -18.1)</td><td>Hồ trong nam</td><td>44°</td><td>Mũi hồ chạm góc đáy kim tự tháp, kim tự tháp thành một cạnh của V</td></tr><tr><td>(-18.4, -18.1)</td><td>Hồ trong nam</td><td>44°</td><td>Mũi hồ chạm góc đáy kim tự tháp, kim tự tháp thành một cạnh của V</td></tr></tbody></table></div>
+
+  <h2>Easter egg</h2>
+  <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Chủ thể trong game</th><th>Vị trí</th><th>Gợi ý tìm</th><th>Điểm</th></tr></thead><tbody>
+    <tr><td class="n">X</td><td>Giàn giáo trùng tu với thanh chéo Saint-André</td><td class="n">(-120, 70)</td><td>Đầu tây cánh Richelieu, nhìn lên tầng hai</td><td class="n">+40</td></tr>
+    <tr><td class="n">C</td><td>Cổng Métro Art Nouveau kiểu Guimard, tay sắt uốn cong, đèn đỏ</td><td class="n">(-126, -52)</td><td>Tây nam quảng trường, biển MÉTROPOLITAIN xanh</td><td class="n">+40</td></tr>
+  </tbody></table></div>
+
+  <h2>Cách tính điểm trong game</h2>
+  <div class="tablewrap"><table><thead><tr><th>Hành động</th><th>Điểm</th></tr></thead><tbody>
+    <tr><td>Chụp một ảnh</td><td class="n">+10</td></tr>
+    <tr><td>Ảnh có chữ A (đỉnh và đáy kim tự tháp trong khung)</td><td class="n">+20</td></tr>
+    <tr><td>Ảnh có chữ V (đứng sát mũi hồ, nhìn theo phân giác)</td><td class="n">+20</td></tr>
+    <tr><td>Máy cân bằng, nghiêng dưới 1°</td><td class="n">+5</td></tr>
+    <tr><td>Đỉnh kim tự tháp ở 1/3 trên khung</td><td class="n">+5</td></tr>
+    <tr><td>V + A tại góc chuẩn</td><td class="n">+30</td></tr>
+    <tr><td>Lần đầu khám phá một góc chuẩn, tối đa 5</td><td class="n">+50 mỗi góc</td></tr>
+    <tr><td>V + A tại góc tranh luận T1 / T2</td><td class="n">+15</td></tr>
+    <tr><td>Easter egg X hoặc C lần đầu</td><td class="n">+40 mỗi cái</td></tr>
+    <tr><td>Vẽ A, V, chấm đỏ và ghi một câu cho một ảnh</td><td class="n">+15 mỗi ảnh</td></tr>
+    <tr><td>Trả lời đúng câu hỏi cuối</td><td class="n">+100</td></tr>
+  </tbody></table></div>
+  <p class="prose" style="margin-top:12px">Sao mỗi ảnh: 3 sao từ 80 điểm, 2 sao từ 45, còn lại 1 sao. Ảnh chụp sau khi dùng Gợi ý vẫn được điểm, dashboard ghi "đã dùng gợi ý".</p>
+
+  <h2>Thể lệ trao thưởng</h2>
+  <div class="callout prose"><b>Điều kiện dự giải.</b> Nhóm có ít nhất 2 ảnh V + A ở 2 góc khác nhau, mỗi ảnh đủ nét A, nét V, chấm đỏ và một câu giải thích đỉnh V dẫn mắt vào đâu. Thiếu một điều kiện thì chỉ xét giải phụ.</div>
+  <div style="margin-top:10px">
+    <div class="award"><div><div class="name">Nhất · Mắt kiến trúc</div></div><div>Tổng điểm trong game cao nhất.<div class="how">Cột Điểm trên dashboard, đối chiếu ảnh thật của nhóm.</div></div></div>
+    <div class="award"><div><div class="name">Nhì · Thợ săn góc</div></div><div>Khám phá nhiều góc chuẩn nhất trong 15 phút, không dùng gợi ý.<div class="how">Cột Góc và cột Gợi ý.</div></div></div>
+    <div class="award"><div><div class="name">Ba · Người kể chuyện</div></div><div>Câu giải thích đỉnh V hay nhất: nói rõ V dẫn mắt vào đâu, vì sao chọn tiêu cự và độ cao máy đó.<div class="how">Giảng viên chấm theo trang tổng hợp, mỗi nhóm trình bày một phút.</div></div></div>
+    <div class="award"><div><div class="name">Phụ · Tinh mắt</div></div><div>Chụp được cả X và C.<div class="how">Cột Egg.</div></div></div>
+    <div class="award"><div><div class="name">Phụ · Góc tranh luận</div></div><div>Lập luận thuyết phục nhất cho T1, T2 hoặc V phối cảnh.<div class="how">Giảng viên chấm khi chữa bài.</div></div></div>
+    <div class="award"><div><div class="name">Phụ · Drone</div></div><div>Ảnh bay đẹp nhất có V + A, nhãn drone và độ cao in sẵn trên ảnh.<div class="how">Cả lớp bình chọn.</div></div></div>
+  </div>
+  <div class="prose" style="margin-top:16px">
+    <p><b>Hoà điểm:</b> ưu tiên nhóm không dùng gợi ý, rồi nhóm có nhiều ảnh 3 sao hơn, rồi nhóm nộp sớm hơn theo giờ trên dashboard.</p>
+    <p><b>Không hợp lệ:</b> ảnh chụp từ cửa sổ hoặc khi bay mà nhóm khai là đứng chụp (game tự gắn nhãn, không sửa được), ảnh của thiết bị khác (mỗi thiết bị một kho ảnh và mã riêng), vẽ sai quy ước (A nét liền, V nét đứt).</p>
+    <p><b>Chữa bài 10 phút:</b> mở dashboard, chiếu bản đồ vị trí cuối của các nhóm, bật chế độ giảng viên trong game với overlay 5 đáp án xanh và 3 trường hợp vàng, bấm "đến vị trí" lần lượt 1 → 5, đối chiếu ảnh nhóm, công bố đáp án 5, trao giải.</p>
+  </div>
+
+  <h2>Liên kết</h2>
+  <ul class="links prose">
+    <li>Game: <a href="https://louvre-va-photo-game.vercel.app">louvre-va-photo-game.vercel.app</a></li>
+    <li>Chế độ giảng viên trong game: thêm <code>?mode=teacher&amp;pin=1789</code></li>
+    <li>Dashboard giảng viên: <a href="https://louvre-va-photo-game.vercel.app/admin.html">/admin.html</a> (mã admin giữ riêng)</li>
+    <li>Mã nguồn và test đáp án: <a href="https://github.com/Tanaircrop/aa/pull/2">Tanaircrop/aa, pull request 2</a>, thư mục <code>louvre-va/</code></li>
+  </ul>
+  <footer>Toạ độ hồ © OpenStreetMap contributors (ODbL). Kim tự tháp Louvre: I. M. Pei, dùng nội bộ lớp học, phi thương mại.</footer>
+</div>
